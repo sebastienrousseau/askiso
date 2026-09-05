@@ -153,7 +153,7 @@ func TestConformanceHelpersAndFailures(t *testing.T) {
 	if err := os.Chmod(filepath.Join(root, CurrentFile), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if ok, detail := privateWorkspace(root); ok || !strings.Contains(detail, "mode") {
+	if ok, detail := privateWorkspace(root); runtime.GOOS != "windows" && (ok || !strings.Contains(detail, "mode")) {
 		t.Fatalf("public pointer = %t, %s", ok, detail)
 	}
 	if err := os.Remove(filepath.Join(root, CurrentFile)); err != nil {
