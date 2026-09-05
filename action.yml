@@ -2,10 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
 name: 'AskISO ISO 20022 check'
+# The Marketplace caps this at 125 characters.
 description: >-
-  Lint ISO 20022 messages and check them against a scheme rule profile, then
-  upload the findings to GitHub code scanning. Needs no ISO 20022 download:
-  linting and the rule profiles run from AskISO's embedded index.
+  Lint ISO 20022 messages against CBPR+ scheme rules and upload the findings to code scanning. No schema download needed.
 author: 'Sebastien Rousseau'
 
 branding:
