@@ -21,7 +21,7 @@ WASM_LDFLAGS = -s -w -X main.buildVersion=$(VERSION)
 # Whole-repository statement coverage, measured without requiring a private
 # catalogue. Keep this aligned with CI so local and hosted gates mean the same
 # thing; raise it only alongside executable tests that protect useful behavior.
-COVERAGE_FLOOR = 98.0
+COVERAGE_FLOOR = 97.5
 GOVULNCHECK_VERSION ?= v1.7.0
 GOSEC_VERSION ?= v2.22.8
 

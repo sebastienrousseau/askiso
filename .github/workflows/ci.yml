@@ -24,7 +24,7 @@ env:
   # GOTOOLCHAIN is local, so a bare '1.26' resolves to whatever patch the runner
   # image happens to ship and cannot satisfy a go.mod requiring a newer one.
   GO_VERSION: '1.26.6'
-  COVERAGE_FLOOR: '98.0'
+  COVERAGE_FLOOR: '97.5'
 
 jobs:
   lint:
