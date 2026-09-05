@@ -276,6 +276,9 @@ func TestWorkspaceHelpersPropagateFilesystemFailures(t *testing.T) {
 }
 
 func TestWorkspacePathResolutionFailures(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows refuses to remove a directory that is a process's working directory")
+	}
 	old, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)

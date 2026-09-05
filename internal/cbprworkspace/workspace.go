@@ -1266,7 +1266,10 @@ func safeGeneratedPath(workspace, relative string) (string, error) {
 }
 
 func safeSourcePath(root, relative string) (string, error) {
-	if relative == "" || filepath.IsAbs(relative) {
+	// A leading separator is rejected as well as an absolute path: on Windows
+	// "/x" is not absolute, but it is rooted at the drive rather than at the
+	// suite, and a suite entry has no business naming either.
+	if relative == "" || filepath.IsAbs(relative) || strings.HasPrefix(relative, "/") || strings.HasPrefix(relative, `\`) {
 		return "", fmt.Errorf("unsafe suite source path %q", relative)
 	}
 	path := filepath.Join(root, filepath.FromSlash(relative))

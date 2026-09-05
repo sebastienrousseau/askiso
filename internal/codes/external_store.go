@@ -88,6 +88,12 @@ func LoadExternalSets(root string) (*ExternalSets, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
+			// Absent is fine. A store directory that has become a file is
+			// not: Unix reports ENOTDIR for that, which is an error, but
+			// Windows reports path-not-found, which would pass as absent.
+			if info, statErr := os.Stat(filepath.Dir(path)); statErr == nil && !info.IsDir() {
+				return nil, fmt.Errorf("reading %s: %s is not a directory", path, filepath.Dir(path))
+			}
 			return nil, nil
 		}
 		return nil, fmt.Errorf("reading %s: %w", path, err)

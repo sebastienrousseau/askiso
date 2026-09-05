@@ -122,7 +122,7 @@ func TestImportAndVerifyPrivateWorkspace(t *testing.T) {
 	if strings.Contains(string(mustRead(t, filepath.Join(workspace, ManifestFile))), source) {
 		t.Fatal("manifest disclosed the absolute source directory")
 	}
-	if info, err := os.Stat(filepath.Join(workspace, ManifestFile)); err != nil || info.Mode().Perm()&0o077 != 0 {
+	if info, err := os.Stat(filepath.Join(workspace, ManifestFile)); err != nil || (runtime.GOOS != "windows" && info.Mode().Perm()&0o077 != 0) {
 		t.Fatalf("manifest permissions = %v, %v", info, err)
 	}
 
@@ -167,7 +167,7 @@ func TestImportGeneratesPrivatePositiveAndNegativeSamples(t *testing.T) {
 			t.Fatal(err)
 		}
 		info, err := os.Stat(path)
-		if err != nil || info.Mode().Perm()&0o077 != 0 {
+		if err != nil || (runtime.GOOS != "windows" && info.Mode().Perm()&0o077 != 0) {
 			t.Fatalf("generated sample permissions = %v, %v", info, err)
 		}
 		body := string(mustRead(t, path))
@@ -1223,8 +1223,12 @@ func TestHelperErrorsAndSuiteIntegrity(t *testing.T) {
 	if _, _, err := validateRoots(filepath.Join(root, "missing"), filepath.Join(root, "workspace")); err == nil {
 		t.Fatal("missing source directory was accepted")
 	}
-	if _, err := safeSourcePath(root, "/absolute.xml"); err == nil {
+	absolute := filepath.Join(filepath.VolumeName(root)+string(filepath.Separator), "absolute.xml")
+	if _, err := safeSourcePath(root, absolute); err == nil {
 		t.Fatal("absolute suite path was accepted")
+	}
+	if _, err := safeSourcePath(root, "/rooted.xml"); err == nil {
+		t.Fatal("rooted suite path was accepted")
 	}
 	if messageFromNamespace("urn:not-iso") != "" {
 		t.Fatal("foreign namespace produced a message identifier")

@@ -143,7 +143,7 @@ func TestConformanceHelpersAndFailures(t *testing.T) {
 	if err := os.Chmod(root, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if ok, detail := privateWorkspace(root); ok || !strings.Contains(detail, "mode") {
+	if ok, detail := privateWorkspace(root); runtime.GOOS != "windows" && (ok || !strings.Contains(detail, "mode")) {
 		t.Fatalf("public workspace = %t, %s", ok, detail)
 	}
 	if err := os.Chmod(root, 0o700); err != nil {

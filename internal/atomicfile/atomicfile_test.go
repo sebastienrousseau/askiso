@@ -7,8 +7,10 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestConcurrentReadersOnlyObserveCompletePublications(t *testing.T) {
@@ -22,7 +24,14 @@ func TestConcurrentReadersOnlyObserveCompletePublications(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	const readers = 32
+	// Windows readers hold the destination open without FILE_SHARE_DELETE, so
+	// a writer can only swap the file in the gaps between reads. Thirty-two
+	// readers spinning leave no gap at all; a few readers that pause between
+	// reads still exercise every interleaving that matters.
+	readers, pause := 32, time.Duration(0)
+	if runtime.GOOS == "windows" {
+		readers, pause = 4, time.Millisecond
+	}
 	const writes = 100
 	stop := make(chan struct{})
 	errs := make(chan string, readers)
@@ -51,6 +60,9 @@ func TestConcurrentReadersOnlyObserveCompletePublications(t *testing.T) {
 				if !bytes.Equal(got, first) && !bytes.Equal(got, second) {
 					errs <- "reader observed a partial or mixed publication"
 					return
+				}
+				if pause > 0 {
+					time.Sleep(pause)
 				}
 			}
 		}()

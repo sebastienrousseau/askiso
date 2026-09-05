@@ -426,6 +426,8 @@ func TestBuildReportsTemporaryDirectoryFailure(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("TMPDIR", blocked)
+	t.Setenv("TMP", blocked)
+	t.Setenv("TEMP", blocked)
 	if _, _, err := build(); err == nil {
 		t.Fatal("build ignored an unusable temporary directory")
 	}

@@ -9,7 +9,8 @@ description: >-
 author: 'Sebastien Rousseau'
 
 branding:
-  icon: 'askiso'
+  # Marketplace accepts Feather icon names only; a custom mark is refused.
+  icon: 'check-circle'
   color: 'blue'
 
 inputs:
