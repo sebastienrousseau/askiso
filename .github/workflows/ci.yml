@@ -221,19 +221,10 @@ jobs:
           go test ./internal/cbprworkspace -run '^TestGenerationStateMachineMatchesOracle$' -rapid.checks=250
 
       - name: Native fuzz smoke campaign
-        run: |
-          go test ./internal/xsd       -run '^$' -fuzz '^FuzzParse$' -fuzztime 15s -parallel 4
-          go test ./internal/xsd       -run '^$' -fuzz '^FuzzStructuredSchema$' -fuzztime 15s -parallel 4
-          go test ./internal/validator -run '^$' -fuzz '^FuzzValidate$' -fuzztime 15s -parallel 4
-          go test ./internal/validator -run '^$' -fuzz '^FuzzStructuredValidation$' -fuzztime 15s -parallel 4
-          go test ./internal/swift     -run '^$' -fuzz '^FuzzParse$' -fuzztime 15s -parallel 4
-          go test ./internal/swift     -run '^$' -fuzz '^FuzzStructuredMT103$' -fuzztime 15s -parallel 4
-          go test ./internal/converter -run '^$' -fuzz '^FuzzRoundTrip$' -fuzztime 15s -parallel 4
-          go test ./internal/converter -run '^$' -fuzz '^FuzzStructuredRoundTrip$' -fuzztime 15s -parallel 4
-          go test ./internal/lsp       -run '^$' -fuzz '^FuzzConnFrameRoundTrip$' -fuzztime 15s -parallel 4
-          go test ./internal/rules     -run '^$' -fuzz '^FuzzCBPRPackMergeAlgebra$' -fuzztime 15s -parallel 4
-          go test ./internal/codes     -run '^$' -fuzz '^FuzzExternalJSONSemanticShapes$' -fuzztime 15s -parallel 4
-          go test ./internal/cbprworkspace -run '^$' -fuzz '^FuzzWorkspaceMetadataRoundTrip$' -fuzztime 15s -parallel 4
+        # One script rather than twelve commands: a deadline that expires
+        # mid-input is reported by go test as a failure (golang/go#72088),
+        # and only a written corpus entry is a finding.
+        run: scripts/fuzz-smoke.sh 15s 4
 
       - name: Aggressive pointer checking
         run: go test -gcflags=all=-d=checkptr=2 -timeout 20m ./...

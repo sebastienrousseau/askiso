@@ -38,6 +38,12 @@ func TestConcurrentReadersOnlyObserveCompletePublications(t *testing.T) {
 				default:
 				}
 				got, err := os.ReadFile(path)
+				if Transient(err) {
+					// Windows refuses the open for the instant of the swap.
+					// That is not a partial read, which is what this test
+					// is about; the next attempt sees a complete file.
+					continue
+				}
 				if err != nil {
 					errs <- err.Error()
 					return

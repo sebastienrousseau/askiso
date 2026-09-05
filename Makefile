@@ -183,18 +183,7 @@ differential:
 # bidirectional conversion, while the malformed-input targets harden framing.
 FUZZTIME ?= 60s
 fuzz:
-	go test ./internal/xsd/       -run '^$$' -fuzz FuzzParse     -fuzztime $(FUZZTIME)
-	go test ./internal/xsd/       -run '^$$' -fuzz FuzzStructuredSchema -fuzztime $(FUZZTIME)
-	go test ./internal/validator/ -run '^$$' -fuzz FuzzValidate  -fuzztime $(FUZZTIME)
-	go test ./internal/validator/ -run '^$$' -fuzz FuzzStructuredValidation -fuzztime $(FUZZTIME)
-	go test ./internal/swift/     -run '^$$' -fuzz FuzzParse     -fuzztime $(FUZZTIME)
-	go test ./internal/swift/     -run '^$$' -fuzz FuzzStructuredMT103 -fuzztime $(FUZZTIME)
-	go test ./internal/converter/ -run '^$$' -fuzz FuzzRoundTrip -fuzztime $(FUZZTIME)
-	go test ./internal/converter/ -run '^$$' -fuzz FuzzStructuredRoundTrip -fuzztime $(FUZZTIME)
-	go test ./internal/lsp/       -run '^$$' -fuzz FuzzConnFrameRoundTrip -fuzztime $(FUZZTIME)
-	go test ./internal/rules/     -run '^$$' -fuzz FuzzCBPRPackMergeAlgebra -fuzztime $(FUZZTIME)
-	go test ./internal/codes/     -run '^$$' -fuzz FuzzExternalJSONSemanticShapes -fuzztime $(FUZZTIME)
-	go test ./internal/cbprworkspace/ -run '^$$' -fuzz FuzzWorkspaceMetadataRoundTrip -fuzztime $(FUZZTIME)
+	scripts/fuzz-smoke.sh $(FUZZTIME)
 
 conformance:
 	@command -v xmllint >/dev/null || { echo "xmllint not found - install libxml2"; exit 1; }

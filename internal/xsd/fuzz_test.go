@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sebastienrousseau/askiso/internal/xsd"
 )
@@ -17,6 +18,11 @@ import (
 // matters here: the parser returns, either a schema or an error.
 //
 //	go test ./internal/xsd/ -fuzz FuzzParse -fuzztime 60s
+
+// parseBudget bounds a single parse in the fuzzer. Real schemas are a few
+// hundred kilobytes and parse in milliseconds; anything past this is a
+// pathological shape worth keeping as a regression input.
+const parseBudget = 2 * time.Second
 
 func FuzzParse(f *testing.F) {
 	f.Add(`<?xml version="1.0"?>
@@ -52,7 +58,13 @@ func FuzzParse(f *testing.F) {
 		if len(data) > 1<<20 {
 			return
 		}
+		// Returning is not enough: a schema is untrusted input, and a parse
+		// that takes seconds on a megabyte is a way to stall the validator.
+		started := time.Now()
 		schema, err := xsd.Parse(strings.NewReader(data))
+		if elapsed := time.Since(started); elapsed > parseBudget {
+			t.Fatalf("Parse took %v on %d bytes; budget is %v", elapsed, len(data), parseBudget)
+		}
 		if err != nil {
 			if schema != nil {
 				t.Fatalf("Parse returned both a schema and an error: %v", err)

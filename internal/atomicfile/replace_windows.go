@@ -49,5 +49,12 @@ func transient(err error) bool {
 	return errors.Is(err, windows.ERROR_SHARING_VIOLATION) || errors.Is(err, windows.ERROR_ACCESS_DENIED)
 }
 
+// Transient reports whether an error from opening or replacing a published
+// file is a passing sharing conflict worth retrying. On Windows a reader can
+// be refused for the instant the destination is being swapped, and a writer
+// can be refused while a reader still holds the old file; neither is a
+// partial publication, and both clear once the other side finishes.
+func Transient(err error) bool { return transient(err) }
+
 // MOVEFILE_WRITE_THROUGH waits for the move to be flushed before returning.
 func syncDirectory(string) error { return nil }
