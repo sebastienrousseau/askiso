@@ -124,9 +124,7 @@ func releaseArtifacts(source string) ([]ReleaseArtifact, string, error) {
 		}
 		services := append([]string{}, file.UsageIdentifiers...)
 		if data, readErr := readBounded(file.abs); readErr == nil {
-			for _, match := range usageIdentifierRE.FindAllString(strings.ToLower(string(data)), -1) {
-				services = append(services, match)
-			}
+			services = append(services, usageIdentifierRE.FindAllString(strings.ToLower(string(data)), -1)...)
 		}
 		sort.Strings(services)
 		services = unique(services)

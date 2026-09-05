@@ -49,7 +49,7 @@ func mainExit(args []string, stderr io.Writer) int {
 	}
 
 	if err := run(*out, *date); err != nil {
-		fmt.Fprintf(stderr, "gen-message-pages: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "gen-message-pages: %v\n", err)
 		return 1
 	}
 	return 0

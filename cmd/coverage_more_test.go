@@ -178,7 +178,7 @@ func TestMockRejectsBadFlagsAndReportsBindFailure(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer ln.Close()
+	defer func() { _ = ln.Close() }()
 	port := ln.Addr().(*net.TCPAddr).Port
 	out, err := run(t, "mock", "--host", "127.0.0.1", "--port", strconv.Itoa(port), "--scenario", "reject-ac04")
 	if err == nil {

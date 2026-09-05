@@ -6,6 +6,8 @@
 package cbprworkspace
 
 import (
+	"os"
+
 	"golang.org/x/sys/windows"
 )
 
@@ -22,5 +24,10 @@ func publishGenerationDirectory(stage, target string) error {
 }
 
 // MoveFileEx with MOVEFILE_WRITE_THROUGH supplies the strongest directory
-// publication guarantee exposed by the Windows API for this operation.
-func syncGenerationDirectory(string) error { return nil }
+// publication guarantee exposed by the Windows API for this operation, so there
+// is nothing further to flush. A directory that does not exist is still an
+// error, as it is on every other platform.
+func syncGenerationDirectory(path string) error {
+	_, err := os.Stat(path)
+	return err
+}

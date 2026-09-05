@@ -19,6 +19,13 @@ var (
 )
 
 func withPublicationLock(workspace string, publish func() error) error {
+	// A workspace path that exists but is not a directory is rejected here
+	// rather than left to the open below. Unix reports ENOTDIR from the lstat,
+	// which is not ErrNotExist; Windows reports ERROR_PATH_NOT_FOUND, which
+	// is, so without this the two platforms would fail with different errors.
+	if info, err := os.Stat(workspace); err == nil && !info.IsDir() {
+		return fmt.Errorf("checking workspace publication lock: %s is not a directory", workspace)
+	}
 	path := filepath.Join(workspace, publicationLockFile)
 	if info, err := publicationLstat(path); err == nil {
 		if info.Mode()&os.ModeSymlink != 0 || !info.Mode().IsRegular() {

@@ -84,7 +84,7 @@ var cbprPackCompileOverlayCmd = &cobra.Command{
 			if err := rules.WriteCBPRPack(output, pack); err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "compiled %d operator-authored constraint(s) into %s\n", len(pack.Constraints), output)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "compiled %d operator-authored constraint(s) into %s\n", len(pack.Constraints), output)
 			return nil
 		}
 		data, err := json.MarshalIndent(pack, "", "  ")

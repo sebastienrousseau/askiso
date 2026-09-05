@@ -60,7 +60,7 @@ func mainExit(args []string, stderr io.Writer) int {
 	}
 
 	if err := run(*content, *fixtures, *bin, *record); err != nil {
-		fmt.Fprintf(stderr, "sessions: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "sessions: %v\n", err)
 		return 1
 	}
 	return 0

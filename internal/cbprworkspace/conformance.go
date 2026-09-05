@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -211,7 +212,7 @@ func privateWorkspace(workspace string, dataRoots ...string) (bool, string) {
 		if err != nil {
 			return false, err.Error()
 		}
-		if info.Mode().Perm()&0o077 != 0 {
+		if !modeIsPrivate(info) {
 			return false, fmt.Sprintf("%s mode is %04o", filepath.Base(item.path), info.Mode().Perm())
 		}
 	}
@@ -233,11 +234,26 @@ func privateWorkspace(workspace string, dataRoots ...string) (bool, string) {
 			}
 			return false, fmt.Sprintf("%s is a symlink", filepath.Base(item.path))
 		}
-		if info.Mode().Perm()&0o077 != 0 {
+		if !modeIsPrivate(info) {
 			return false, fmt.Sprintf("%s mode is %04o", filepath.Base(item.path), info.Mode().Perm())
 		}
 	}
+	if runtime.GOOS == "windows" {
+		return true, "POSIX modes are not enforced on Windows; the workspace inherits the user profile ACL"
+	}
 	return true, "workspace 0700; control files 0600"
+}
+
+// modeIsPrivate reports whether nobody but the owner can reach the entry.
+// Windows carries no POSIX permission bits: Go reports 0777 for every
+// directory and 0666 for every writable file there, so the check would fail
+// on every workspace. Privacy on Windows comes from the profile directory's
+// ACL, which this check cannot inspect and so does not claim to.
+func modeIsPrivate(info os.FileInfo) bool {
+	if runtime.GOOS == "windows" {
+		return true
+	}
+	return info.Mode().Perm()&0o077 == 0
 }
 
 func externalPublicationAsOf(publication *ExternalPublication, asOf time.Time) (bool, string) {
@@ -265,9 +281,10 @@ func userSampleCoverage(cases []SuiteCase) (map[string]bool, map[string]bool, ma
 			continue
 		}
 		key := testCase.MessageID + "|" + testCase.BusinessService
-		if testCase.Expected == "valid" {
+		switch testCase.Expected {
+		case "valid":
 			positive[key] = true
-		} else if testCase.Expected == "invalid" {
+		case "invalid":
 			negative[key] = true
 			scenarios[testCase.Scenario] = true
 		}

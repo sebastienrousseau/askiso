@@ -27,6 +27,8 @@ web/public/
 # Local licensed CBPR+ source/compiled packs. These must not be redistributed.
 .askiso-cbpr/
 *.cbpr-pack.json
+# Except the synthetic fixture that pins the v1 pack format for the tests.
+!internal/rules/testdata/legacy-v1.cbpr-pack.json
 
 # macOS
 .DS_Store

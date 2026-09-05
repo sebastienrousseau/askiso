@@ -221,7 +221,7 @@ func TestExportValidSamplesAndPreserveSyntheticProvenance(t *testing.T) {
 			t.Fatalf("exported sample lacks %q: %s", want, body)
 		}
 	}
-	if info, err := os.Stat(path); err != nil || info.Mode().Perm() != 0o600 {
+	if info, err := os.Stat(path); err != nil || (runtime.GOOS != "windows" && info.Mode().Perm() != 0o600) {
 		t.Fatalf("exported sample permissions = %v, %v", info, err)
 	}
 

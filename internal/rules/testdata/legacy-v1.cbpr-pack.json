@@ -1,0 +1,41 @@
+{
+  "format": "askiso-cbpr-pack/v1",
+  "fingerprint": "5098c2b15e857c01d619fc82",
+  "sources": [
+    {
+      "name": "legacy-local.pdf",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "message_id": "pacs.008.001.08",
+      "usage_identifiers": [
+        "swift.cbprplus.03"
+      ],
+      "constraints": 1
+    }
+  ],
+  "constraints": [
+    {
+      "id": "CBPR-PACK-LEGACY000001",
+      "source": "legacy-local.pdf",
+      "message_id": "pacs.008.001.08",
+      "usage_identifiers": [
+        "swift.cbprplus.03"
+      ],
+      "path": [
+        "Document",
+        "FIToFICstmrCdtTrf",
+        "GrpHdr",
+        "MsgId"
+      ],
+      "min": 1,
+      "max": 1,
+      "data_type": "Max35Text",
+      "min_length": 1,
+      "max_length": 35,
+      "pattern": "^[A-Za-z0-9/-]+$",
+      "values": [
+        "LEGACY",
+        "REFERENCE"
+      ]
+    }
+  ]
+}

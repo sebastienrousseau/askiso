@@ -902,7 +902,6 @@ func TestPackDispatchRequiresMatchingHeaderService(t *testing.T) {
 }
 
 func TestPackSearchTieBreaksAndUTF8SnippetBoundaries(t *testing.T) {
-	hits := []CBPRPackHit{}
 	dir := t.TempDir()
 	for _, name := range []string{"b.pdf", "a.pdf"} {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte(name), 0o600); err != nil {
@@ -912,8 +911,7 @@ func TestPackSearchTieBreaksAndUTF8SnippetBoundaries(t *testing.T) {
 	stubPDFExtraction(t, func(_ string, path string, _ bool) (string, error) {
 		return "match\fmatch", nil
 	})
-	var err error
-	hits, err = SearchCBPRPack(dir, "match", 4)
+	hits, err := SearchCBPRPack(dir, "match", 4)
 	if err != nil {
 		t.Fatal(err)
 	}

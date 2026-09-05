@@ -5,7 +5,22 @@
 
 package atomicfile
 
-import "golang.org/x/sys/windows"
+import (
+	"errors"
+	"time"
+
+	"golang.org/x/sys/windows"
+)
+
+// A reader that has the destination open without FILE_SHARE_DELETE, which is
+// how Go opens files for reading, makes MoveFileEx fail with a sharing
+// violation or access denied until it closes. Readers are short-lived, so the
+// replace is retried for a bounded window rather than failed at once.
+const (
+	replaceRetryFor   = 5 * time.Second
+	replaceRetryStart = time.Millisecond
+	replaceRetryMax   = 50 * time.Millisecond
+)
 
 func replace(oldPath, newPath string) error {
 	from, err := windows.UTF16PtrFromString(oldPath)
@@ -16,7 +31,22 @@ func replace(oldPath, newPath string) error {
 	if err != nil {
 		return err
 	}
-	return windows.MoveFileEx(from, to, windows.MOVEFILE_REPLACE_EXISTING|windows.MOVEFILE_WRITE_THROUGH)
+	deadline := time.Now().Add(replaceRetryFor)
+	wait := replaceRetryStart
+	for {
+		err = windows.MoveFileEx(from, to, windows.MOVEFILE_REPLACE_EXISTING|windows.MOVEFILE_WRITE_THROUGH)
+		if err == nil || !transient(err) || time.Now().After(deadline) {
+			return err
+		}
+		time.Sleep(wait)
+		if wait *= 2; wait > replaceRetryMax {
+			wait = replaceRetryMax
+		}
+	}
+}
+
+func transient(err error) bool {
+	return errors.Is(err, windows.ERROR_SHARING_VIOLATION) || errors.Is(err, windows.ERROR_ACCESS_DENIED)
 }
 
 // MOVEFILE_WRITE_THROUGH waits for the move to be flushed before returning.

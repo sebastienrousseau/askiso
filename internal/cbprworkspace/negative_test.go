@@ -7,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -43,7 +44,7 @@ func TestExportNegativeSamples(t *testing.T) {
 	}
 	for _, name := range report.Files {
 		info, err := os.Stat(filepath.Join(output, name))
-		if err != nil || info.Mode().Perm() != 0o600 || !strings.Contains(name, "askiso-generated.invalid.xml") {
+		if err != nil || (runtime.GOOS != "windows" && info.Mode().Perm() != 0o600) || !strings.Contains(name, "askiso-generated.invalid.xml") {
 			t.Fatalf("negative sample %q = %v, %v", name, info, err)
 		}
 	}

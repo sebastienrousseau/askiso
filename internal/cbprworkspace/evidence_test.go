@@ -7,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -22,7 +23,7 @@ func TestReviewAuditAndEvidenceWorkflow(t *testing.T) {
 	if err != nil || len(checklist.Items) != 62 || checklist.CreatedAt != "2026-09-05T09:00:00Z" {
 		t.Fatalf("checklist = %+v, %v", checklist, err)
 	}
-	if info, err := os.Stat(checklistPath); err != nil || info.Mode().Perm() != 0o600 {
+	if info, err := os.Stat(checklistPath); err != nil || (runtime.GOOS != "windows" && info.Mode().Perm() != 0o600) {
 		t.Fatalf("checklist mode = %v, %v", info, err)
 	}
 	audit, err := AuditSamples(source, workspace)

@@ -61,32 +61,32 @@ var cbprPackImportCmd = &cobra.Command{
 		if cbprWorkspaceJSON {
 			return writeCBPRJSON(cmd, manifest)
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "CBPR+ %s private workspace ready at %s\n", manifest.Release, cbprWorkspace)
-		fmt.Fprintf(cmd.OutOrStdout(), "  Usage Guidelines : %d/%d\n",
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "CBPR+ %s private workspace ready at %s\n", manifest.Release, cbprWorkspace)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Usage Guidelines : %d/%d\n",
 			manifest.Coverage.PresentUsageGuidelines, manifest.Coverage.ExpectedUsageGuidelines)
-		fmt.Fprintf(cmd.OutOrStdout(), "  Executable XML UGs: %d/%d\n",
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Executable XML UGs: %d/%d\n",
 			manifest.Coverage.ExecutableUsageGuidelines, manifest.Coverage.ExpectedUsageGuidelines)
-		fmt.Fprintf(cmd.OutOrStdout(), "  Constraints      : %d\n", manifest.Coverage.Constraints)
-		fmt.Fprintf(cmd.OutOrStdout(), "  Schemas / samples: %d / %d user + %d exported + %d workspace-generated\n",
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Constraints      : %d\n", manifest.Coverage.Constraints)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Schemas / samples: %d / %d user + %d exported + %d workspace-generated\n",
 			manifest.Coverage.Schemas, manifest.Coverage.Samples, manifest.Coverage.AskISOGeneratedSamples,
 			manifest.Coverage.GeneratedSamples)
-		fmt.Fprintf(cmd.OutOrStdout(), "  Guideline JSON   : %d\n", manifest.Coverage.JSONSchemas)
-		fmt.Fprintf(cmd.OutOrStdout(), "  Suite cases      : %d\n", manifest.SuiteCases)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Guideline JSON   : %d\n", manifest.Coverage.JSONSchemas)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Suite cases      : %d\n", manifest.SuiteCases)
 		if manifest.ExternalCodes != nil {
-			fmt.Fprintf(cmd.OutOrStdout(), "  External codes   : %d across %d sets (%s)\n",
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  External codes   : %d across %d sets (%s)\n",
 				manifest.ExternalCodes.Codes, manifest.ExternalCodes.Sets, manifest.ExternalCodes.Publication)
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "  Fingerprint      : %s\n", manifest.Fingerprint)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Fingerprint      : %s\n", manifest.Fingerprint)
 		if len(manifest.Coverage.MissingUsageGuidelines) > 0 {
-			fmt.Fprintln(cmd.OutOrStdout(), "  Missing:")
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "  Missing:")
 			for _, missing := range manifest.Coverage.MissingUsageGuidelines {
-				fmt.Fprintf(cmd.OutOrStdout(), "    - %s\n", strings.Replace(missing, "|", " / ", 1))
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "    - %s\n", strings.Replace(missing, "|", " / ", 1))
 			}
 		}
 		for _, warning := range manifest.Warnings {
-			fmt.Fprintf(cmd.OutOrStdout(), "  Warning: %s\n", warning)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Warning: %s\n", warning)
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), "  Local only: AskISO did not copy or upload any source artefact.")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "  Local only: AskISO did not copy or upload any source artefact.")
 		return nil
 	},
 }
@@ -103,19 +103,19 @@ var cbprPackStatusCmd = &cobra.Command{
 		if cbprWorkspaceJSON {
 			return writeCBPRJSON(cmd, manifest)
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "CBPR+ %s workspace %s\n", manifest.Release, manifest.Fingerprint)
-		fmt.Fprintf(cmd.OutOrStdout(), "  Usage Guidelines : %d/%d (%d missing)\n",
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "CBPR+ %s workspace %s\n", manifest.Release, manifest.Fingerprint)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Usage Guidelines : %d/%d (%d missing)\n",
 			manifest.Coverage.PresentUsageGuidelines, manifest.Coverage.ExpectedUsageGuidelines,
 			len(manifest.Coverage.MissingUsageGuidelines))
-		fmt.Fprintf(cmd.OutOrStdout(), "  Executable XML UGs: %d/%d (%d missing)\n",
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Executable XML UGs: %d/%d (%d missing)\n",
 			manifest.Coverage.ExecutableUsageGuidelines, manifest.Coverage.ExpectedUsageGuidelines,
 			len(manifest.Coverage.MissingExecutableUsageGuidelines))
-		fmt.Fprintf(cmd.OutOrStdout(), "  Constraints      : %d\n", manifest.Coverage.Constraints)
-		fmt.Fprintf(cmd.OutOrStdout(), "  Guideline JSON   : %d\n", manifest.Coverage.JSONSchemas)
-		fmt.Fprintf(cmd.OutOrStdout(), "  Samples          : %d user + %d exported + %d workspace-generated\n",
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Constraints      : %d\n", manifest.Coverage.Constraints)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Guideline JSON   : %d\n", manifest.Coverage.JSONSchemas)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Samples          : %d user + %d exported + %d workspace-generated\n",
 			manifest.Coverage.Samples, manifest.Coverage.AskISOGeneratedSamples,
 			manifest.Coverage.GeneratedSamples)
-		fmt.Fprintf(cmd.OutOrStdout(), "  Suite cases      : %d\n", manifest.SuiteCases)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Suite cases      : %d\n", manifest.SuiteCases)
 		return nil
 	},
 }
@@ -141,7 +141,7 @@ var cbprPackGenerationsCmd = &cobra.Command{
 			if !generation.Valid {
 				validity = "INVALID: " + generation.Error
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "%s  %-8s %-8s %8d bytes  %s\n", generation.Fingerprint, state, generation.Release, generation.SizeBytes, validity)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s  %-8s %-8s %8d bytes  %s\n", generation.Fingerprint, state, generation.Release, generation.SizeBytes, validity)
 		}
 		return nil
 	},
@@ -159,7 +159,7 @@ var cbprPackActivateCmd = &cobra.Command{
 		if cbprWorkspaceJSON {
 			return writeCBPRJSON(cmd, manifest)
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "Activated CBPR+ %s workspace generation %s\n", manifest.Release, manifest.Fingerprint)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Activated CBPR+ %s workspace generation %s\n", manifest.Release, manifest.Fingerprint)
 		return nil
 	},
 }
@@ -171,7 +171,7 @@ var cbprPackPruneCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "Pruned %d inactive CBPR+ generations\n", removed)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Pruned %d inactive CBPR+ generations\n", removed)
 		return nil
 	},
 }
@@ -190,14 +190,14 @@ var cbprPackVerifyCmd = &cobra.Command{
 				return err
 			}
 		} else {
-			fmt.Fprintf(cmd.OutOrStdout(), "CBPR+ %s local suite: %d passed, %d failed, %d total\n",
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "CBPR+ %s local suite: %d passed, %d failed, %d total\n",
 				report.Release, report.Passed, report.Failed, report.Cases)
 			for _, result := range report.Results {
 				mark := "PASS"
 				if !result.Passed {
 					mark = "FAIL"
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "  %s %s (expected %s, got %s)\n",
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  %s %s (expected %s, got %s)\n",
 					mark, result.ID, result.Expected, result.Actual)
 			}
 		}
@@ -230,19 +230,19 @@ var cbprPackConformanceCmd = &cobra.Command{
 			if report.Ready {
 				status = "READY"
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "CBPR+ %s conformance: %s (as of %s)\n", report.Release, status, report.AsOf)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "CBPR+ %s conformance: %s (as of %s)\n", report.Release, status, report.AsOf)
 			for _, check := range report.Checks {
 				mark := "PASS"
 				if !check.Passed {
 					mark = "FAIL"
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "  %s %-28s %s (required: %s)\n", mark, check.ID, check.Actual, check.Required)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  %s %-28s %s (required: %s)\n", mark, check.ID, check.Actual, check.Required)
 			}
 			for _, missing := range append(append([]string{}, report.MissingPositiveSamples...), report.MissingNegativeSamples...) {
-				fmt.Fprintf(cmd.OutOrStdout(), "  Missing sample: %s\n", strings.Replace(missing, "|", " / ", 1))
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Missing sample: %s\n", strings.Replace(missing, "|", " / ", 1))
 			}
 			for _, scenario := range report.MissingScenarios {
-				fmt.Fprintf(cmd.OutOrStdout(), "  Missing scenario: %s\n", scenario)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Missing scenario: %s\n", scenario)
 			}
 		}
 		if !report.Ready {
@@ -266,12 +266,12 @@ var cbprPackExportValidSamplesCmd = &cobra.Command{
 		if cbprWorkspaceJSON {
 			return writeCBPRJSON(cmd, report)
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "CBPR+ %s: exported %d AskISO-generated valid samples to %s\n",
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "CBPR+ %s: exported %d AskISO-generated valid samples to %s\n",
 			report.Release, report.Generated, report.Output)
 		for _, name := range report.Files {
-			fmt.Fprintf(cmd.OutOrStdout(), "  - %s\n", name)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  - %s\n", name)
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), "  Provenance: synthetic fixtures generated from the operator's private schemas; not independent conformance evidence.")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "  Provenance: synthetic fixtures generated from the operator's private schemas; not independent conformance evidence.")
 		return nil
 	},
 }
@@ -288,14 +288,14 @@ var cbprPackExportInvalidSamplesCmd = &cobra.Command{
 		if cbprWorkspaceJSON {
 			return writeCBPRJSON(cmd, report)
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "CBPR+ %s: exported %d AskISO-generated invalid samples to %s\n", report.Release, report.Generated, report.Output)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "CBPR+ %s: exported %d AskISO-generated invalid samples to %s\n", report.Release, report.Generated, report.Output)
 		for scenario, count := range report.Scenarios {
-			fmt.Fprintf(cmd.OutOrStdout(), "  %-20s %d\n", scenario, count)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  %-20s %d\n", scenario, count)
 		}
 		for _, warning := range report.Warnings {
-			fmt.Fprintf(cmd.OutOrStdout(), "  Warning: %s\n", warning)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Warning: %s\n", warning)
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), "  Provenance: synthetic rejection fixtures; not independent conformance evidence.")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "  Provenance: synthetic rejection fixtures; not independent conformance evidence.")
 		return nil
 	},
 }
@@ -312,7 +312,7 @@ var cbprPackChecklistCmd = &cobra.Command{
 		if cbprWorkspaceJSON {
 			return writeCBPRJSON(cmd, report)
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "Wrote %d pending review items to %s\n", len(report.Items), cbprSampleOutput)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Wrote %d pending review items to %s\n", len(report.Items), cbprSampleOutput)
 		return nil
 	},
 }
@@ -329,9 +329,9 @@ var cbprPackAuditSamplesCmd = &cobra.Command{
 		if cbprWorkspaceJSON {
 			return writeCBPRJSON(cmd, report)
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "Sample audit: %d independently eligible, %d synthetic, ready=%t\n", report.Eligible, report.Synthetic, report.ReadyForAttestation)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Sample audit: %d independently eligible, %d synthetic, ready=%t\n", report.Eligible, report.Synthetic, report.ReadyForAttestation)
 		for _, warning := range report.SensitiveDataWarnings {
-			fmt.Fprintf(cmd.OutOrStdout(), "  Sensitive-data warning: %s\n", warning)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Sensitive-data warning: %s\n", warning)
 		}
 		return nil
 	},
@@ -349,8 +349,8 @@ var cbprPackAnonymiseSamplesCmd = &cobra.Command{
 		if cbprWorkspaceJSON {
 			return writeCBPRJSON(cmd, report)
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "Anonymised %d samples (%d changed) into %s\n", report.Processed, report.Changed, report.Output)
-		fmt.Fprintln(cmd.OutOrStdout(), "  Review required: pattern-based anonymisation cannot guarantee removal of every sensitive value.")
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Anonymised %d samples (%d changed) into %s\n", report.Processed, report.Changed, report.Output)
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "  Review required: pattern-based anonymisation cannot guarantee removal of every sensitive value.")
 		return nil
 	},
 }
@@ -367,7 +367,7 @@ var cbprPackAttestSamplesCmd = &cobra.Command{
 		if cbprWorkspaceJSON {
 			return writeCBPRJSON(cmd, report)
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "Recorded %d reviewed sample hashes in %s\n", len(report.Cases), cbprSampleOutput)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Recorded %d reviewed sample hashes in %s\n", len(report.Cases), cbprSampleOutput)
 		return nil
 	},
 }
@@ -384,7 +384,7 @@ var cbprPackRecordEvidenceCmd = &cobra.Command{
 		if cbprWorkspaceJSON {
 			return writeCBPRJSON(cmd, report)
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "Recorded external verdict from %s for %d cases in %s\n", report.Provider, report.Cases, cbprSampleOutput)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Recorded external verdict from %s for %d cases in %s\n", report.Provider, report.Cases, cbprSampleOutput)
 		return nil
 	},
 }
@@ -406,7 +406,7 @@ var cbprPackDiffCmd = &cobra.Command{
 		if cbprWorkspaceJSON || cbprSampleOutput == "" {
 			return writeCBPRJSON(cmd, report)
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "%s to %s: %d added, %d removed, %d changed, %d unchanged\n",
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s to %s: %d added, %d removed, %d changed, %d unchanged\n",
 			report.FromRelease, report.ToRelease, len(report.Added), len(report.Removed), len(report.Changed), report.Unchanged)
 		return nil
 	},
