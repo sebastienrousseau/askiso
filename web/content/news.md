@@ -38,6 +38,17 @@ To follow along without visiting: subscribe to the [feed](/rss.xml) in any
 reader, watch releases on GitHub, or ask on the [contact page](/contact/) to be
 told by email when something changes that affects the messages you send.
 
+## v0.0.3 — 5 September 2026
+
+The private CBPR+ workspace. An institution that holds the Swift Usage
+Guidelines for SR2025 can now build a versioned workspace from its own
+export, check messages against it, and keep the evidence, without any Swift
+content leaving the machine. The site was checked fact by fact against the
+code and against Swift's own notices, and every page gained social
+descriptions, breadcrumbs and software markup. The build is green again on
+Linux, macOS and Windows, and the [GitHub Action](https://github.com/marketplace/actions/askiso-iso-20022-check)
+is listed on the Marketplace.
+
 ## v0.0.2 — 28 August 2026
 
 The website release, which introduced the commercial navigation, four hub
