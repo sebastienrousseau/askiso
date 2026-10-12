@@ -308,13 +308,15 @@ func parseSuggestionIndex(input string) int {
 // when output is piped.
 const defaultTerminalWidth = 60
 
+var controllingTerminalWidthFn = controllingTerminalWidth
+
 // getTerminalWidth reports the usable column count.
 //
 // The controlling-terminal probe is platform specific and lives in
 // terminal_unix.go / terminal_other.go; the rest of the strategy is shared.
 func getTerminalWidth() int {
 	// 1. The controlling terminal, which is correct even when output is piped.
-	if w := controllingTerminalWidth(); w > 0 {
+	if w := controllingTerminalWidthFn(); w > 0 {
 		return w
 	}
 
