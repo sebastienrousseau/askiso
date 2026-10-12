@@ -18,6 +18,10 @@ func TestTerminalWidthUsesTerminfoFallback(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("uses a POSIX tput stand-in")
 	}
+	old := controllingTerminalWidthFn
+	controllingTerminalWidthFn = func() int { return 0 }
+	defer func() { controllingTerminalWidthFn = old }()
+
 	dir := t.TempDir()
 	tput := filepath.Join(dir, "tput")
 	if err := os.WriteFile(tput, []byte("#!/bin/sh\nprintf '91\\n'\n"), 0o700); err != nil {
