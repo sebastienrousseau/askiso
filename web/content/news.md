@@ -40,10 +40,10 @@ told by email when something changes that affects the messages you send.
 
 ## v0.0.4 - 12 October 2026
 
-The security and supply chain update. Pinned the Go toolchain and workflow
-matrix to Go 1.26.9, remediating nine standard library vulnerabilities in
-net/http and html/template detected by govulncheck. Strengthened build and
-verification pipelines across Linux, macOS and Windows.
+The security and supply chain update. The Go toolchain and the workflow matrix
+now pin Go 1.26.9, which fixes nine known security bugs that govulncheck found
+in net/http and html/template, two parts of the standard library. The build and
+verification pipelines are also stronger on Linux, macOS and Windows.
 
 ## v0.0.3 — 5 September 2026
 
