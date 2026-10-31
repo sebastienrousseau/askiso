@@ -809,7 +809,7 @@ cosign verify-blob checksums.txt \
 
 ## Development
 
-Building from source needs **Go 1.26.9 or newer**. That is a floor rather than a
+Building from source needs **Go 1.26.10 or newer**. That is a floor rather than a
 preference: it is the release carrying the standard library fixes for the advisories
 `govulncheck` reports against anything older, one of which
 ([GO-2026-6088](https://pkg.go.dev/vuln/GO-2026-6088)) guards `encoding/xml` against

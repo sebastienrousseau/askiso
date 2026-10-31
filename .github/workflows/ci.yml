@@ -23,7 +23,7 @@ env:
   # Keep in step with the `go` directive in go.mod, patch release included.
   # GOTOOLCHAIN is local, so a bare '1.26' resolves to whatever patch the runner
   # image happens to ship and cannot satisfy a go.mod requiring a newer one.
-  GO_VERSION: '1.26.9'
+  GO_VERSION: '1.26.10'
   COVERAGE_FLOOR: '97.5'
 
 jobs:
@@ -68,10 +68,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        # 1.26.9 is the floor, not a preference: it carries the standard library
+        # 1.26.10 is the floor, not a preference: it carries the standard library
         # fixes that go.mod requires. An older release cannot build the module,
         # and testing on one would exercise a standard library AskISO does not ship against.
-        go: ['1.26.9']
+        go: ['1.26.10']
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -86,7 +86,7 @@ jobs:
         run: go test -race ./...
 
       - name: Measure coverage
-        if: matrix.os == 'ubuntu-latest' && matrix.go == '1.26.9'
+        if: matrix.os == 'ubuntu-latest' && matrix.go == '1.26.10'
         # Race detection and whole-repository instrumentation are deliberately
         # separate. Combining them makes each test binary instrument every
         # package under the race detector, which can exceed Go's test timeout
@@ -185,7 +185,7 @@ jobs:
           esac
 
       - name: Enforce coverage floor
-        if: matrix.os == 'ubuntu-latest' && matrix.go == '1.26.9'
+        if: matrix.os == 'ubuntu-latest' && matrix.go == '1.26.10'
         shell: bash
         run: |
           pct="$(go tool cover -func=coverage.out | tail -1 | grep -oE '[0-9]+\.[0-9]+')"

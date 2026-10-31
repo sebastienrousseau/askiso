@@ -40,12 +40,13 @@ told by email when something changes that affects the messages you send.
 
 ## v0.0.5 - 31 October 2026
 
-The file permissions update. AskISO now requires golang.org/x/net v0.62.0,
-which resolves two security advisories that govulncheck reported against
-v0.60.0. Every file it writes is now private to your account: an imported
-catalogue, a message translated with --out, and the directories containing
-them are no longer readable by other users on the same machine. The static
-security scan of the source code now comes back clean.
+The file permissions update. AskISO now requires Go 1.26.10 and
+golang.org/x/net v0.62.0, which resolve three security advisories that
+govulncheck reported against Go 1.26.9 and x/net v0.60.0. Every file it writes
+is now private to your account: an imported catalogue, a message translated
+with --out, and the directories containing them are no longer readable by
+other users on the same machine. The static security scan of the source code
+now comes back clean.
 
 ## v0.0.4 - 12 October 2026
 
