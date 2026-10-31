@@ -543,7 +543,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
-      - uses: sebastienrousseau/askiso@v0.0.4
+      - uses: sebastienrousseau/askiso@v0.0.5
         with:
           path: ./messages
           profile: cbpr-2026

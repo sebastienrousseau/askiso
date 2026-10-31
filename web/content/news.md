@@ -38,6 +38,15 @@ To follow along without visiting: subscribe to the [feed](/rss.xml) in any
 reader, watch releases on GitHub, or ask on the [contact page](/contact/) to be
 told by email when something changes that affects the messages you send.
 
+## v0.0.5 - 31 October 2026
+
+The file permissions update. AskISO now requires golang.org/x/net v0.62.0,
+which resolves two security advisories that govulncheck reported against
+v0.60.0. Every file it writes is now private to your account: an imported
+catalogue, a message translated with --out, and the directories containing
+them are no longer readable by other users on the same machine. The static
+security scan of the source code now comes back clean.
+
 ## v0.0.4 - 12 October 2026
 
 The security and supply chain update. The Go toolchain and the workflow matrix
