@@ -268,38 +268,49 @@ func checkOneWithRuntime(path string, cat *iso20022.Catalogue, profile *rules.Pr
 	rep.ErrorCount += lintRes.Errors
 
 	if cat != nil {
-		var schemaRes *iso20022.SchemaResult
-		if external == nil {
-			schemaRes, err = cat.Validate(data)
-		} else {
-			var schemaPath string
-			schemaPath, err = cat.SchemaPath(rep.MessageID)
-			if err == nil {
-				schemaRes, err = iso20022.ValidateFileWithExternalCodes(data, schemaPath, external)
-			}
-		}
-		switch {
-		case err != nil:
-			rep.Err = err.Error()
-			rep.ErrorCount++
-		default:
-			rep.Schema = schemaRes
-			rep.ErrorCount += len(schemaRes.Errors)
-		}
+		addSchemaResult(&rep, data, cat, external)
 	}
-
 	if profile != nil {
-		profRes, err := runResolvedProfile(data, path, *profile)
-		if err != nil {
-			rep.Err = err.Error()
-			rep.ErrorCount++
-		} else {
-			rep.Profile = profRes
-			rep.ErrorCount += profRes.Errors
-		}
+		addProfileResult(&rep, data, path, *profile)
 	}
 
 	return rep
+}
+
+// addSchemaResult validates data against the catalogue schema, through the
+// external code sets when supplied, and records the outcome on rep.
+func addSchemaResult(rep *FileReport, data []byte, cat *iso20022.Catalogue, external *iso20022.ExternalCodeSets) {
+	var schemaRes *iso20022.SchemaResult
+	var err error
+	if external == nil {
+		schemaRes, err = cat.Validate(data)
+	} else {
+		var schemaPath string
+		schemaPath, err = cat.SchemaPath(rep.MessageID)
+		if err == nil {
+			schemaRes, err = iso20022.ValidateFileWithExternalCodes(data, schemaPath, external)
+		}
+	}
+	if err != nil {
+		rep.Err = err.Error()
+		rep.ErrorCount++
+		return
+	}
+	rep.Schema = schemaRes
+	rep.ErrorCount += len(schemaRes.Errors)
+}
+
+// addProfileResult runs the resolved rule profile over data and records the
+// outcome on rep.
+func addProfileResult(rep *FileReport, data []byte, path string, profile rules.Profile) {
+	profRes, err := runResolvedProfile(data, path, profile)
+	if err != nil {
+		rep.Err = err.Error()
+		rep.ErrorCount++
+		return
+	}
+	rep.Profile = profRes
+	rep.ErrorCount += profRes.Errors
 }
 
 func sarifRuleID(prefix, name string) string {

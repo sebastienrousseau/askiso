@@ -998,23 +998,11 @@ func generatedSampleStem(file discovered) string {
 }
 
 func writeGeneratedSample(workspace, relative string, data []byte) (string, error) {
-	dir := filepath.Join(workspace, GeneratedDir)
-	if info, err := os.Lstat(dir); err == nil {
-		if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
-			return "", errors.New("generated-samples path is not a real directory")
-		}
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return "", err
-	} else if err := os.Mkdir(dir, 0o700); err != nil {
-		return "", err
-	}
-	if err := fsperm.PrivateDir(dir); err != nil {
+	if err := ensureGeneratedDir(filepath.Join(workspace, GeneratedDir)); err != nil {
 		return "", err
 	}
 	path := filepath.Join(workspace, filepath.FromSlash(relative))
-	if info, err := os.Lstat(path); err == nil && info.Mode()&os.ModeSymlink != 0 {
-		return "", errors.New("refusing to overwrite a symlinked generated sample")
-	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
+	if err := refuseSymlinkedSample(path); err != nil {
 		return "", err
 	}
 	if err := atomicfile.Write(path, data, 0o600); err != nil {
@@ -1022,6 +1010,33 @@ func writeGeneratedSample(workspace, relative string, data []byte) (string, erro
 	}
 	sum := sha256.Sum256(data)
 	return hex.EncodeToString(sum[:]), nil
+}
+
+// ensureGeneratedDir creates the generated-samples directory when it is
+// missing, refuses a symlink or non-directory in its place, and keeps it
+// private.
+func ensureGeneratedDir(dir string) error {
+	if info, err := os.Lstat(dir); err == nil {
+		if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
+			return errors.New("generated-samples path is not a real directory")
+		}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return err
+	} else if err := os.Mkdir(dir, 0o700); err != nil {
+		return err
+	}
+	return fsperm.PrivateDir(dir)
+}
+
+// refuseSymlinkedSample rejects a generated-sample path that is a symlink;
+// a missing path is fine because the write will create it.
+func refuseSymlinkedSample(path string) error {
+	if info, err := os.Lstat(path); err == nil && info.Mode()&os.ModeSymlink != 0 {
+		return errors.New("refusing to overwrite a symlinked generated sample")
+	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	return nil
 }
 
 // LoadManifest loads and verifies the shape and fingerprint of a workspace.
@@ -1300,45 +1315,60 @@ func messageMetadataFromXML(path string) (string, []string, error) {
 	}
 	defer func() { _ = f.Close() }()
 	dec := xml.NewDecoder(io.LimitReader(f, maxSourceSize+1))
-	messageID := ""
-	businessService := ""
-	inBusinessService := false
+	var scan xmlMetadataScan
 	for {
 		token, err := dec.Token()
 		if err == io.EOF {
-			if messageID == "" {
+			if scan.messageID == "" {
 				return "", nil, errors.New("no ISO 20022 Document namespace")
 			}
-			var services []string
-			for _, allowed := range rules.CBPRSR2025UsageGuidelines() {
-				if allowed.MessageID == messageID && allowed.UsageIdentifier == strings.ToLower(strings.TrimSpace(businessService)) {
-					services = []string{allowed.UsageIdentifier}
-					break
-				}
-			}
-			return messageID, services, nil
+			return scan.messageID, cbprUsageServices(scan.messageID, scan.businessService), nil
 		}
 		if err != nil {
 			return "", nil, err
 		}
-		switch value := token.(type) {
-		case xml.StartElement:
-			if value.Name.Local == "Document" {
-				if message := messageFromNamespace(value.Name.Space); message != "" {
-					messageID = message
-				}
-			}
-			inBusinessService = value.Name.Local == "BizSvc"
-		case xml.CharData:
-			if inBusinessService {
-				businessService += string(value)
-			}
-		case xml.EndElement:
-			if value.Name.Local == "BizSvc" {
-				inBusinessService = false
+		scan.observe(token)
+	}
+}
+
+// xmlMetadataScan accumulates the Document namespace message ID and the
+// BizSvc text seen while streaming a message's tokens.
+type xmlMetadataScan struct {
+	messageID         string
+	businessService   string
+	inBusinessService bool
+}
+
+// observe folds one XML token into the scan state.
+func (s *xmlMetadataScan) observe(token xml.Token) {
+	switch value := token.(type) {
+	case xml.StartElement:
+		if value.Name.Local == "Document" {
+			if message := messageFromNamespace(value.Name.Space); message != "" {
+				s.messageID = message
 			}
 		}
+		s.inBusinessService = value.Name.Local == "BizSvc"
+	case xml.CharData:
+		if s.inBusinessService {
+			s.businessService += string(value)
+		}
+	case xml.EndElement:
+		if value.Name.Local == "BizSvc" {
+			s.inBusinessService = false
+		}
 	}
+}
+
+// cbprUsageServices returns the CBPR+ usage identifier matching the message
+// and BizSvc value, or nil when the pair is not a known usage guideline.
+func cbprUsageServices(messageID, businessService string) []string {
+	for _, allowed := range rules.CBPRSR2025UsageGuidelines() {
+		if allowed.MessageID == messageID && allowed.UsageIdentifier == strings.ToLower(strings.TrimSpace(businessService)) {
+			return []string{allowed.UsageIdentifier}
+		}
+	}
+	return nil
 }
 
 func readBounded(path string) ([]byte, error) {
