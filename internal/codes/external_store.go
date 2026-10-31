@@ -14,6 +14,7 @@ import (
 	"sync"
 
 	"github.com/sebastienrousseau/askiso/internal/atomicfile"
+	"github.com/sebastienrousseau/askiso/internal/fsperm"
 )
 
 // An imported publication lives beside the catalogue it belongs to, in a form
@@ -43,7 +44,7 @@ func SaveExternalSets(root string, sets *ExternalSets) (string, error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return "", fmt.Errorf("creating %s: %w", filepath.Dir(path), err)
 	}
-	if err := os.Chmod(filepath.Dir(path), 0o700); err != nil {
+	if err := fsperm.PrivateDir(filepath.Dir(path)); err != nil {
 		return "", fmt.Errorf("protecting %s: %w", filepath.Dir(path), err)
 	}
 	if info, err := os.Lstat(path); err == nil && info.Mode()&os.ModeSymlink != 0 {
@@ -85,7 +86,7 @@ func LoadExternalSets(root string) (*ExternalSets, error) {
 	}
 	path := ExternalCodesPath(root)
 
-	f, err := os.Open(path)
+	f, err := os.Open(filepath.Clean(path))
 	if err != nil {
 		if os.IsNotExist(err) {
 			// Absent is fine. A store directory that has become a file is

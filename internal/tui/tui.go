@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -544,7 +545,7 @@ func (m *Model) openMarkdown(content, label string) {
 
 func (m *Model) openFile(path, label string) {
 	m.viewingTitle = label
-	contentBytes, err := os.ReadFile(path)
+	contentBytes, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		m.viewingContent = fmt.Sprintf("Error loading file: %v", err)
 	} else {

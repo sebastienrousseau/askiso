@@ -36,14 +36,14 @@ const headBytes = 64 << 10
 // resolve its schema.
 func readInstanceHead(path string, streaming bool) ([]byte, error) {
 	if !streaming {
-		data, err := os.ReadFile(path)
+		data, err := os.ReadFile(filepath.Clean(path))
 		if err != nil {
 			return nil, fmt.Errorf("reading %s: %w", path, err)
 		}
 		return data, nil
 	}
 
-	f, err := os.Open(path)
+	f, err := os.Open(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("reading %s: %w", path, err)
 	}

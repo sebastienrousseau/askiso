@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/alecthomas/chroma/v2/formatters"
 	"github.com/alecthomas/chroma/v2/lexers"
@@ -69,7 +70,7 @@ for any ISO 20022 message with terminal syntax highlighting and clipboard export
 			return err
 		}
 
-		data, err := os.ReadFile(targetPath)
+		data, err := os.ReadFile(filepath.Clean(targetPath))
 		if err != nil {
 			return fmt.Errorf("failed to read sample file: %w", err)
 		}

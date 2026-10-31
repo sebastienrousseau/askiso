@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -127,6 +128,17 @@ func TestTranslateFileOut(t *testing.T) {
 	}
 	if !strings.Contains(string(written), "<Document") {
 		t.Errorf("the written file is not a message:\n%s", written)
+	}
+	// A translated payment carries account and party data; other accounts on
+	// the machine must not be able to read it.
+	if runtime.GOOS != "windows" {
+		info, err := os.Stat(dest)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if extra := info.Mode().Perm() & 0o077; extra != 0 {
+			t.Errorf("%s has mode %v; group and other bits should be clear", dest, info.Mode().Perm())
+		}
 	}
 }
 

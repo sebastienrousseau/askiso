@@ -218,7 +218,7 @@ func cbprPDFPaths(path string, info os.FileInfo) ([]string, error) {
 }
 
 func fileSHA256(path string) (string, error) {
-	f, err := os.Open(path)
+	f, err := os.Open(filepath.Clean(path))
 	if err != nil {
 		return "", fmt.Errorf("reading %s: %w", filepath.Base(path), err)
 	}

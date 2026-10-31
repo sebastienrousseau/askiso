@@ -92,7 +92,7 @@ func run(contentDir, fixtures, bin string, record bool) error {
 	var checked, drifted, skipped int
 
 	for _, f := range files {
-		src, err := os.ReadFile(f)
+		src, err := os.ReadFile(filepath.Clean(f))
 		if err != nil {
 			return err
 		}
@@ -135,7 +135,7 @@ func run(contentDir, fixtures, bin string, record bool) error {
 		}
 
 		if changed {
-			if err := os.WriteFile(f, []byte(strings.Join(lines, "\n")), 0o644); err != nil {
+			if err := os.WriteFile(f, []byte(strings.Join(lines, "\n")), 0o600); err != nil {
 				return err
 			}
 			fmt.Printf("re-recorded %s\n", f)
@@ -169,6 +169,7 @@ func build() (string, func(), error) {
 		bin += ".exe"
 	}
 
+	// #nosec G204 -- bin is a path this function built inside its own MkdirTemp.
 	cmd := exec.Command("go", "build", "-o", bin, "./cmd/askiso")
 	cmd.Dir = root
 	cmd.Stderr = os.Stderr
@@ -235,6 +236,8 @@ func replay(bin, dir string, lines []string) ([]string, int, error) {
 			continue
 		}
 
+		// #nosec G204 -- bin is the askiso binary built above, and the guard above
+		// runs only lines whose first word is askiso, without a pipe or redirect.
 		cmd := exec.Command(bin, fields[1:]...)
 		cmd.Dir = dir
 		// A catalogue is a developer's own download and CI has none, so the

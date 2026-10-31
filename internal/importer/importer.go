@@ -183,7 +183,7 @@ func ImportArchive(archivePath string, opt Options) (*Result, error) {
 		if err != nil {
 			return nil, fmt.Errorf("resolving catalogue root: %w", err)
 		}
-		if err := os.MkdirAll(filepath.Dir(absRoot), 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(absRoot), 0o750); err != nil {
 			return nil, fmt.Errorf("creating catalogue parent: %w", err)
 		}
 		staging, err = os.MkdirTemp(filepath.Dir(absRoot), ".askiso-import-")
@@ -352,24 +352,34 @@ func withinRoot(root, dest string) error {
 
 func checkEntry(f *zip.File, lim Limits) error {
 	// validateLimits rejects non-positive limits before this path is reached;
-	// the checked conversion is therefore bounded by the int64 field domain.
-	if f.UncompressedSize64 > uint64(lim.MaxFileSize) { // #nosec G115 -- validated positive int64 limit
+	// limitAsUint64 makes that bound explicit for the uint64 header fields.
+	if f.UncompressedSize64 > limitAsUint64(lim.MaxFileSize) {
 		return fmt.Errorf("entry is %d bytes, over the %d limit", f.UncompressedSize64, lim.MaxFileSize)
 	}
 	if f.CompressedSize64 > 0 {
 		ratio := f.UncompressedSize64 / f.CompressedSize64
-		if ratio > uint64(lim.MaxRatio) { // #nosec G115 -- validated positive int64 limit
+		if ratio > limitAsUint64(lim.MaxRatio) {
 			return fmt.Errorf("compression ratio %d:1 exceeds %d:1", ratio, lim.MaxRatio)
 		}
 	}
 	return nil
 }
 
+// limitAsUint64 widens a limit for comparison with a zip header size. A
+// negative limit, which validateLimits already rejects, maps to zero so that
+// every entry fails the check rather than wrapping to a huge bound.
+func limitAsUint64(n int64) uint64 {
+	if n < 0 {
+		return 0
+	}
+	return uint64(n)
+}
+
 func extract(f *zip.File, root, dest string, lim Limits) (int64, error) {
 	if err := withinRoot(root, dest); err != nil {
 		return 0, err
 	}
-	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dest), 0o750); err != nil {
 		return 0, fmt.Errorf("creating %s: %w", filepath.Dir(dest), err)
 	}
 
@@ -379,7 +389,7 @@ func extract(f *zip.File, root, dest string, lim Limits) (int64, error) {
 	}
 	defer func() { _ = rc.Close() }()
 
-	out, err := os.OpenFile(dest, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+	out, err := os.OpenFile(filepath.Clean(dest), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
 		return 0, fmt.Errorf("creating %s: %w", dest, err)
 	}
@@ -473,7 +483,7 @@ func prepareDestination(root, dest string) error {
 		return err
 	}
 	current := root
-	if err := os.MkdirAll(current, 0o755); err != nil {
+	if err := os.MkdirAll(current, 0o750); err != nil {
 		return fmt.Errorf("creating catalogue root: %w", err)
 	}
 	for _, part := range strings.Split(rel, string(filepath.Separator)) {
@@ -488,7 +498,7 @@ func prepareDestination(root, dest string) error {
 		case err == nil && !info.IsDir():
 			return fmt.Errorf("catalogue path %s is not a directory", current)
 		case errors.Is(err, os.ErrNotExist):
-			if err := os.Mkdir(current, 0o755); err != nil && !errors.Is(err, os.ErrExist) {
+			if err := os.Mkdir(current, 0o750); err != nil && !errors.Is(err, os.ErrExist) {
 				return fmt.Errorf("creating %s: %w", current, err)
 			}
 		case err != nil:
@@ -504,12 +514,12 @@ func prepareDestination(root, dest string) error {
 }
 
 func copyFileExclusive(source, dest string) error {
-	in, err := os.Open(source)
+	in, err := os.Open(filepath.Clean(source))
 	if err != nil {
 		return err
 	}
 	defer func() { _ = in.Close() }()
-	out, err := os.OpenFile(dest, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+	out, err := os.OpenFile(filepath.Clean(dest), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
 		return fmt.Errorf("creating %s: %w", dest, err)
 	}

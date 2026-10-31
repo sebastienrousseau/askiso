@@ -61,7 +61,7 @@ func run(outDir, date string) error {
 		return fmt.Errorf("loading registry: %w", err)
 	}
 
-	if err := os.MkdirAll(outDir, 0o755); err != nil {
+	if err := os.MkdirAll(outDir, 0o750); err != nil {
 		return err
 	}
 
@@ -86,7 +86,7 @@ func run(outDir, date string) error {
 		page := buildPage(reg, m, byBase[m.BaseCode], mtFor[m.BaseCode],
 			mxSupported[m.BaseCode], generator.HasTemplate(m.BaseCode), date)
 		path := filepath.Join(outDir, m.ID+".md")
-		if err := os.WriteFile(path, []byte(page), 0o644); err != nil {
+		if err := os.WriteFile(path, []byte(page), 0o600); err != nil {
 			return err
 		}
 	}
@@ -226,7 +226,7 @@ func writeIndex(reg *registry.Registry, outDir, date string) error {
 		fmt.Fprintf(&b, "\n")
 	}
 
-	return os.WriteFile(filepath.Join(outDir, "index.md"), []byte(b.String()), 0o644)
+	return os.WriteFile(filepath.Join(outDir, "index.md"), []byte(b.String()), 0o600)
 }
 
 // domainRank puts the business areas most visitors arrive for at the top. Every

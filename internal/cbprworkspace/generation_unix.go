@@ -5,14 +5,17 @@
 
 package cbprworkspace
 
-import "os"
+import (
+	"os"
+	"path/filepath"
+)
 
 func publishGenerationDirectory(stage, target string) error {
 	return os.Rename(stage, target)
 }
 
 func syncGenerationDirectory(path string) error {
-	dir, err := os.Open(path)
+	dir, err := os.Open(filepath.Clean(path))
 	if err != nil {
 		return err
 	}

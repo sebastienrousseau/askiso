@@ -248,7 +248,7 @@ func checkOneWithProfile(path string, cat *iso20022.Catalogue, profile *rules.Pr
 func checkOneWithRuntime(path string, cat *iso20022.Catalogue, profile *rules.Profile, external *iso20022.ExternalCodeSets) FileReport {
 	rep := FileReport{File: path}
 
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		rep.Err = err.Error()
 		rep.ErrorCount = 1

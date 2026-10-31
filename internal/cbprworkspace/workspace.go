@@ -27,6 +27,7 @@ import (
 
 	"github.com/sebastienrousseau/askiso/internal/atomicfile"
 	"github.com/sebastienrousseau/askiso/internal/codes"
+	"github.com/sebastienrousseau/askiso/internal/fsperm"
 	"github.com/sebastienrousseau/askiso/internal/rules"
 	"github.com/sebastienrousseau/askiso/internal/schemagen"
 	"github.com/sebastienrousseau/askiso/internal/validator"
@@ -1007,7 +1008,7 @@ func writeGeneratedSample(workspace, relative string, data []byte) (string, erro
 	} else if err := os.Mkdir(dir, 0o700); err != nil {
 		return "", err
 	}
-	if err := os.Chmod(dir, 0o700); err != nil {
+	if err := fsperm.PrivateDir(dir); err != nil {
 		return "", err
 	}
 	path := filepath.Join(workspace, filepath.FromSlash(relative))
@@ -1293,7 +1294,7 @@ func messageFromXML(path string) (string, error) {
 }
 
 func messageMetadataFromXML(path string) (string, []string, error) {
-	f, err := os.Open(path)
+	f, err := os.Open(filepath.Clean(path))
 	if err != nil {
 		return "", nil, err
 	}
@@ -1348,11 +1349,11 @@ func readBounded(path string) ([]byte, error) {
 	if info.Size() > maxSourceSize {
 		return nil, fmt.Errorf("%s exceeds the %d-byte suite limit", filepath.Base(path), maxSourceSize)
 	}
-	return os.ReadFile(path)
+	return os.ReadFile(filepath.Clean(path))
 }
 
 func fileSHA256(path string) (string, error) {
-	f, err := os.Open(path)
+	f, err := os.Open(filepath.Clean(path))
 	if err != nil {
 		return "", fmt.Errorf("fingerprinting %s: %w", filepath.Base(path), err)
 	}

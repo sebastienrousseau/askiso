@@ -81,6 +81,16 @@ type Server struct {
 	sequence atomic.Uint64
 }
 
+// clockSeed turns a wall-clock time into the first sequence number. A time
+// before 1970, which has a negative UnixNano, starts the sequence at zero.
+func clockSeed(t time.Time) uint64 {
+	n := t.UnixNano()
+	if n < 0 {
+		return 0
+	}
+	return uint64(n)
+}
+
 // NewServer creates a mock rail on loopback.
 func NewServer(port int) *Server {
 	return NewServerWith(Options{Port: port})
@@ -89,7 +99,7 @@ func NewServer(port int) *Server {
 // NewServerWith creates a mock rail from explicit options.
 func NewServerWith(opt Options) *Server {
 	s := &Server{Port: opt.Port, scenario: opt.Scenario}
-	s.sequence.Store(uint64(time.Now().UnixNano()))
+	s.sequence.Store(clockSeed(time.Now()))
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v1/health", s.handleHealth)

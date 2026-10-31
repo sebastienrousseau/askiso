@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -130,7 +131,7 @@ type Facets struct {
 
 // ParseFile reads and parses an XSD document.
 func ParseFile(path string) (*Schema, error) {
-	f, err := os.Open(path)
+	f, err := os.Open(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("opening schema: %w", err)
 	}

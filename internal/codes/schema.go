@@ -249,7 +249,7 @@ func mergeInto(dst, src *SchemaIndex) {
 
 // extractInto pulls enumerations out of one schema.
 func extractInto(idx *SchemaIndex, path, msgID string) error {
-	f, err := os.Open(path)
+	f, err := os.Open(filepath.Clean(path))
 	if err != nil {
 		return err
 	}
