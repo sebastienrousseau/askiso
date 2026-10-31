@@ -66,15 +66,17 @@ func mainExit(args []string, stderr io.Writer) int {
 	return 0
 }
 
+// tally counts what a run did, for the summary line it ends with.
+type tally struct {
+	checked, drifted, skipped int
+}
+
 func run(contentDir, fixtures, bin string, record bool) error {
-	if bin == "" {
-		built, cleanup, err := build()
-		if err != nil {
-			return err
-		}
-		defer cleanup()
-		bin = built
+	bin, cleanup, err := resolveBin(bin)
+	if err != nil {
+		return err
 	}
+	defer cleanup()
 
 	abs, err := filepath.Abs(fixtures)
 	if err != nil {
@@ -89,67 +91,102 @@ func run(contentDir, fixtures, bin string, record bool) error {
 		return err
 	}
 
-	var checked, drifted, skipped int
-
+	var t tally
 	for _, f := range files {
-		src, err := os.ReadFile(filepath.Clean(f))
-		if err != nil {
+		if err := checkFile(f, bin, abs, record, &t); err != nil {
 			return err
-		}
-		lines := strings.Split(string(src), "\n")
-
-		sessions := find(lines)
-		if len(sessions) == 0 {
-			continue
-		}
-
-		changed := false
-		// Rewriting shifts line numbers, so replay from the last block back.
-		for i := len(sessions) - 1; i >= 0; i-- {
-			s := sessions[i]
-			want := lines[s.start+1 : s.end]
-			got, skips, err := replay(bin, abs, want)
-			if err != nil {
-				return fmt.Errorf("%s: %w", f, err)
-			}
-			skipped += skips
-			checked++
-
-			if equal(want, got) {
-				continue
-			}
-
-			drifted++
-			if !record {
-				fmt.Printf("\n%s:%d — the recorded session no longer matches the binary\n",
-					f, s.start+1)
-				fmt.Print(diff(want, got))
-				continue
-			}
-
-			out := append([]string{}, lines[:s.start+1]...)
-			out = append(out, got...)
-			out = append(out, lines[s.end:]...)
-			lines = out
-			changed = true
-		}
-
-		if changed {
-			if err := os.WriteFile(f, []byte(strings.Join(lines, "\n")), 0o600); err != nil {
-				return err
-			}
-			fmt.Printf("re-recorded %s\n", f)
 		}
 	}
 
 	fmt.Printf("sessions: %d checked, %d not executed, %d drifted\n",
-		checked, skipped, drifted)
+		t.checked, t.skipped, t.drifted)
 
-	if drifted > 0 && !record {
+	if t.drifted > 0 && !record {
 		return fmt.Errorf("%d session(s) disagree with the binary; "+
-			"run `make sessions-record` if the change was deliberate", drifted)
+			"run `make sessions-record` if the change was deliberate", t.drifted)
 	}
 	return nil
+}
+
+// resolveBin returns the binary to run and a cleanup for it. An empty bin
+// means build one from this working tree; a given bin needs no cleanup.
+func resolveBin(bin string) (string, func(), error) {
+	if bin != "" {
+		return bin, func() {}, nil
+	}
+	return build()
+}
+
+// checkFile replays every session in one content file. Without record it
+// reports each session that drifted; with record it rewrites the file so the
+// recorded output is what the binary wrote.
+func checkFile(f, bin, fixtures string, record bool, t *tally) error {
+	src, err := os.ReadFile(filepath.Clean(f))
+	if err != nil {
+		return err
+	}
+	lines := strings.Split(string(src), "\n")
+
+	sessions := find(lines)
+	if len(sessions) == 0 {
+		return nil
+	}
+
+	changed := false
+	// Rewriting shifts line numbers, so replay from the last block back.
+	for i := len(sessions) - 1; i >= 0; i-- {
+		s := sessions[i]
+		want := lines[s.start+1 : s.end]
+		got, same, err := replaySession(bin, fixtures, want, t)
+		if err != nil {
+			return fmt.Errorf("%s: %w", f, err)
+		}
+		if same {
+			continue
+		}
+		if !record {
+			fmt.Printf("\n%s:%d — the recorded session no longer matches the binary\n",
+				f, s.start+1)
+			fmt.Print(diff(want, got))
+			continue
+		}
+		lines = splice(lines, s, got)
+		changed = true
+	}
+
+	if !changed {
+		return nil
+	}
+	if err := os.WriteFile(f, []byte(strings.Join(lines, "\n")), 0o600); err != nil {
+		return err
+	}
+	fmt.Printf("re-recorded %s\n", f)
+	return nil
+}
+
+// replaySession runs one session, counts it in t, and reports whether the
+// recorded output still matches what the binary wrote.
+func replaySession(bin, fixtures string, want []string, t *tally) ([]string, bool, error) {
+	got, skips, err := replay(bin, fixtures, want)
+	if err != nil {
+		return nil, false, err
+	}
+	t.skipped += skips
+	t.checked++
+
+	if equal(want, got) {
+		return got, true, nil
+	}
+	t.drifted++
+	return got, false, nil
+}
+
+// splice replaces the body of session s in lines with got, keeping both
+// fences.
+func splice(lines []string, s session, got []string) []string {
+	out := append([]string{}, lines[:s.start+1]...)
+	out = append(out, got...)
+	return append(out, lines[s.end:]...)
 }
 
 // build compiles the binary the sessions run against, so verification is
