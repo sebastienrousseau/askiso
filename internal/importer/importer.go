@@ -148,13 +148,8 @@ type counter struct {
 
 // ImportArchive explodes one zip into the catalogue.
 func ImportArchive(archivePath string, opt Options) (*Result, error) {
-	if opt.Limits == (Limits{}) {
-		opt.Limits = DefaultLimits()
-	}
-	if opt.Root == "" {
-		return nil, errors.New("importer: Root is required")
-	}
-	if err := validateLimits(opt.Limits); err != nil {
+	opt, err := checkOptions(opt)
+	if err != nil {
 		return nil, err
 	}
 
@@ -167,28 +162,14 @@ func ImportArchive(archivePath string, opt Options) (*Result, error) {
 	}
 	defer func() { _ = zr.Close() }()
 
-	category := opt.Category
-	if category == "" {
-		category = categoryFromArchiveName(archivePath)
-	}
-	version := opt.Version
-	if version == "" {
-		version = versionFromArchiveName(archivePath)
-	}
+	category, version := archiveLabels(archivePath, opt)
 
 	walkOpt := opt
 	var staging string
 	if !opt.DryRun {
-		absRoot, err := filepath.Abs(opt.Root)
+		staging, err = createStaging(opt.Root)
 		if err != nil {
-			return nil, fmt.Errorf("resolving catalogue root: %w", err)
-		}
-		if err := os.MkdirAll(filepath.Dir(absRoot), 0o750); err != nil {
-			return nil, fmt.Errorf("creating catalogue parent: %w", err)
-		}
-		staging, err = os.MkdirTemp(filepath.Dir(absRoot), ".askiso-import-")
-		if err != nil {
-			return nil, fmt.Errorf("creating import staging directory: %w", err)
+			return nil, err
 		}
 		defer func() { _ = os.RemoveAll(staging) }()
 		walkOpt.Root = staging
@@ -207,6 +188,52 @@ func ImportArchive(archivePath string, opt Options) (*Result, error) {
 		}
 	}
 	return res, nil
+}
+
+// checkOptions fills in the default limits and rejects an import with no
+// catalogue root or a non-positive limit.
+func checkOptions(opt Options) (Options, error) {
+	if opt.Limits == (Limits{}) {
+		opt.Limits = DefaultLimits()
+	}
+	if opt.Root == "" {
+		return opt, errors.New("importer: Root is required")
+	}
+	if err := validateLimits(opt.Limits); err != nil {
+		return opt, err
+	}
+	return opt, nil
+}
+
+// archiveLabels returns the category and version an archive files under,
+// taking the caller's values and deriving each missing one from the name.
+func archiveLabels(archivePath string, opt Options) (category, version string) {
+	category = opt.Category
+	if category == "" {
+		category = categoryFromArchiveName(archivePath)
+	}
+	version = opt.Version
+	if version == "" {
+		version = versionFromArchiveName(archivePath)
+	}
+	return category, version
+}
+
+// createStaging makes an empty staging directory beside the catalogue root,
+// where an import is verified in full before commitStaging copies it in.
+func createStaging(root string) (string, error) {
+	absRoot, err := filepath.Abs(root)
+	if err != nil {
+		return "", fmt.Errorf("resolving catalogue root: %w", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(absRoot), 0o750); err != nil {
+		return "", fmt.Errorf("creating catalogue parent: %w", err)
+	}
+	staging, err := os.MkdirTemp(filepath.Dir(absRoot), ".askiso-import-")
+	if err != nil {
+		return "", fmt.Errorf("creating import staging directory: %w", err)
+	}
+	return staging, nil
 }
 
 func validateLimits(lim Limits) error {
@@ -491,20 +518,35 @@ func prepareDestination(root, dest string) error {
 			continue
 		}
 		current = filepath.Join(current, part)
-		info, err := os.Lstat(current)
-		switch {
-		case err == nil && info.Mode()&os.ModeSymlink != 0:
-			return fmt.Errorf("refusing to import through symlink %s", current)
-		case err == nil && !info.IsDir():
-			return fmt.Errorf("catalogue path %s is not a directory", current)
-		case errors.Is(err, os.ErrNotExist):
-			if err := os.Mkdir(current, 0o750); err != nil && !errors.Is(err, os.ErrExist) {
-				return fmt.Errorf("creating %s: %w", current, err)
-			}
-		case err != nil:
+		if err := ensureCatalogueDir(current); err != nil {
 			return err
 		}
 	}
+	return refuseExisting(dest)
+}
+
+// ensureCatalogueDir checks one directory on the way to a destination: it
+// refuses a symlink or a non-directory, and creates the directory if missing.
+func ensureCatalogueDir(current string) error {
+	info, err := os.Lstat(current)
+	switch {
+	case err == nil && info.Mode()&os.ModeSymlink != 0:
+		return fmt.Errorf("refusing to import through symlink %s", current)
+	case err == nil && !info.IsDir():
+		return fmt.Errorf("catalogue path %s is not a directory", current)
+	case errors.Is(err, os.ErrNotExist):
+		if err := os.Mkdir(current, 0o750); err != nil && !errors.Is(err, os.ErrExist) {
+			return fmt.Errorf("creating %s: %w", current, err)
+		}
+	case err != nil:
+		return err
+	}
+	return nil
+}
+
+// refuseExisting fails when anything, a dangling symlink included, already
+// occupies dest, so a commit never overwrites catalogue content.
+func refuseExisting(dest string) error {
 	if _, err := os.Lstat(dest); err == nil {
 		return fmt.Errorf("refusing to overwrite existing catalogue file %s", dest)
 	} else if !errors.Is(err, os.ErrNotExist) {
