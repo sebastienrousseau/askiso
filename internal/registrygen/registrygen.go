@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -78,7 +79,7 @@ type Stats struct {
 
 // Build reads the RA manifest and writes the compressed registry blob.
 func Build(manifestPath, outPath string) (Stats, error) {
-	raw, err := os.ReadFile(manifestPath)
+	raw, err := os.ReadFile(filepath.Clean(manifestPath))
 	if err != nil {
 		return Stats{}, fmt.Errorf("reading manifest: %w", err)
 	}
@@ -88,7 +89,7 @@ func Build(manifestPath, outPath string) (Stats, error) {
 		return Stats{}, err
 	}
 
-	out, err := os.Create(outPath)
+	out, err := os.Create(filepath.Clean(outPath))
 	if err != nil {
 		return Stats{}, fmt.Errorf("creating %s: %w", outPath, err)
 	}

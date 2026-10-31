@@ -740,6 +740,20 @@ func TestGeneratedSuiteDiagnosticsAndPathSafety(t *testing.T) {
 		}
 	})
 
+	t.Run("writer helpers surface stat failures", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("Windows reports a path through a file as not-exist rather than ENOTDIR")
+		}
+		file := filepath.Join(t.TempDir(), "file")
+		writeWorkspaceFile(t, file, "x")
+		if err := ensureGeneratedDir(filepath.Join(file, GeneratedDir)); err == nil || errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("generated dir under a file error = %v", err)
+		}
+		if err := refuseSymlinkedSample(filepath.Join(file, "x.xml")); err == nil || errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("sample under a file error = %v", err)
+		}
+	})
+
 	if runtime.GOOS != "windows" {
 		t.Run("generation reports sample write failures", func(t *testing.T) {
 			sourceRoot := t.TempDir()

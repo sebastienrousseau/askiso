@@ -20,7 +20,7 @@ All contributors and maintainers must strictly adhere to the project's semantic 
 ## Development Workflow
 
 ### Prerequisites
-* Go 1.26.9 or higher - the `go` directive in `go.mod` requires it, because that
+* Go 1.26.10 or higher - the `go` directive in `go.mod` requires it, because that
   release carries the standard library security fixes AskISO builds against
 * Make
 

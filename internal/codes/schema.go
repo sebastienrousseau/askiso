@@ -249,7 +249,7 @@ func mergeInto(dst, src *SchemaIndex) {
 
 // extractInto pulls enumerations out of one schema.
 func extractInto(idx *SchemaIndex, path, msgID string) error {
-	f, err := os.Open(path)
+	f, err := os.Open(filepath.Clean(path))
 	if err != nil {
 		return err
 	}
@@ -259,11 +259,7 @@ func extractInto(idx *SchemaIndex, path, msgID string) error {
 	dec.Strict = false
 	dec.Entity = xml.HTMLEntity
 
-	var currentSet string
-	var pendingCode string
-	inDocumentation := false
-	var docText strings.Builder
-
+	w := &schemaWalker{idx: idx, msgID: msgID}
 	for {
 		tok, err := dec.Token()
 		if err == io.EOF {
@@ -272,50 +268,74 @@ func extractInto(idx *SchemaIndex, path, msgID string) error {
 		if err != nil {
 			return err
 		}
-
-		switch t := tok.(type) {
-		case xml.StartElement:
-			switch t.Name.Local {
-			case "simpleType":
-				currentSet = ""
-				name := attrValue(t, "name")
-				if strings.HasSuffix(name, "Code") {
-					currentSet = name
-				}
-			case "enumeration":
-				if currentSet == "" {
-					continue
-				}
-				pendingCode = attrValue(t, "value")
-				docText.Reset()
-				addCode(idx, currentSet, pendingCode, "", msgID)
-			case "documentation":
-				inDocumentation = pendingCode != ""
-			}
-
-		case xml.CharData:
-			if inDocumentation {
-				docText.Write(t)
-			}
-
-		case xml.EndElement:
-			switch t.Name.Local {
-			case "documentation":
-				if inDocumentation && pendingCode != "" {
-					if desc := strings.Join(strings.Fields(docText.String()), " "); desc != "" {
-						addCode(idx, currentSet, pendingCode, desc, msgID)
-					}
-				}
-				inDocumentation = false
-			case "enumeration":
-				pendingCode = ""
-			case "simpleType":
-				currentSet = ""
-				pendingCode = ""
-			}
-		}
+		w.token(tok)
 	}
 	return nil
+}
+
+// schemaWalker carries what extractInto has seen so far in one schema: the
+// code set it is inside, the code awaiting a description, and that text.
+type schemaWalker struct {
+	idx             *SchemaIndex
+	msgID           string
+	currentSet      string
+	pendingCode     string
+	inDocumentation bool
+	docText         strings.Builder
+}
+
+// token advances the walk by one XML token.
+func (w *schemaWalker) token(tok xml.Token) {
+	switch t := tok.(type) {
+	case xml.StartElement:
+		w.start(t)
+	case xml.CharData:
+		if w.inDocumentation {
+			w.docText.Write(t)
+		}
+	case xml.EndElement:
+		w.end(t)
+	}
+}
+
+// start opens a code set, records an enumeration in it, or begins collecting
+// the description of the pending code.
+func (w *schemaWalker) start(t xml.StartElement) {
+	switch t.Name.Local {
+	case "simpleType":
+		w.currentSet = ""
+		name := attrValue(t, "name")
+		if strings.HasSuffix(name, "Code") {
+			w.currentSet = name
+		}
+	case "enumeration":
+		if w.currentSet == "" {
+			return
+		}
+		w.pendingCode = attrValue(t, "value")
+		w.docText.Reset()
+		addCode(w.idx, w.currentSet, w.pendingCode, "", w.msgID)
+	case "documentation":
+		w.inDocumentation = w.pendingCode != ""
+	}
+}
+
+// end records a finished description and closes the code or set it ends.
+func (w *schemaWalker) end(t xml.EndElement) {
+	switch t.Name.Local {
+	case "documentation":
+		if w.inDocumentation && w.pendingCode != "" {
+			if desc := strings.Join(strings.Fields(w.docText.String()), " "); desc != "" {
+				addCode(w.idx, w.currentSet, w.pendingCode, desc, w.msgID)
+			}
+		}
+		w.inDocumentation = false
+	case "enumeration":
+		w.pendingCode = ""
+	case "simpleType":
+		w.currentSet = ""
+		w.pendingCode = ""
+	}
 }
 
 // addCode records a code, keeping the first description found and accumulating

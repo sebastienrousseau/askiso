@@ -16,7 +16,7 @@ permissions:
 env:
   # Pin the patch release so shipped binaries carry the patched standard
   # library rather than whatever the runner image happens to ship.
-  GO_VERSION: '1.26.9'
+  GO_VERSION: '1.26.10'
 
 jobs:
   # The gate runs again against the tag. A release that was never proven green

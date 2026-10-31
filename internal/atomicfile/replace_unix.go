@@ -5,7 +5,10 @@
 
 package atomicfile
 
-import "os"
+import (
+	"os"
+	"path/filepath"
+)
 
 func replace(oldPath, newPath string) error { return os.Rename(oldPath, newPath) }
 
@@ -15,7 +18,7 @@ func replace(oldPath, newPath string) error { return os.Rename(oldPath, newPath)
 func Transient(error) bool { return false }
 
 func syncDirectory(path string) error {
-	dir, err := os.Open(path)
+	dir, err := os.Open(filepath.Clean(path))
 	if err != nil {
 		return err
 	}

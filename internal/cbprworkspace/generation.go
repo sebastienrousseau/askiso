@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/sebastienrousseau/askiso/internal/atomicfile"
+	"github.com/sebastienrousseau/askiso/internal/fsperm"
 )
 
 const (
@@ -72,7 +73,7 @@ func beginGeneration(workspace string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("creating workspace generation: %w", err)
 	}
-	if err := os.Chmod(stage, 0o700); err != nil {
+	if err := fsperm.PrivateDir(stage); err != nil {
 		_ = os.RemoveAll(stage)
 		return "", fmt.Errorf("protecting workspace generation: %w", err)
 	}
@@ -365,5 +366,5 @@ func ensurePrivateDirectory(path string) error {
 	if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
 		return fmt.Errorf("workspace artifact directory is unsafe: %s", filepath.Base(path))
 	}
-	return os.Chmod(path, 0o700)
+	return fsperm.PrivateDir(path)
 }

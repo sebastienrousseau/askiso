@@ -323,6 +323,11 @@ func TestAdditionalCommandFailurePaths(t *testing.T) {
 	if _, err := runResolvedProfile([]byte(`<Document>`), "broken.xml", profile); err == nil || !strings.Contains(err.Error(), "parsing broken.xml") {
 		t.Fatalf("malformed profiled message error = %v", err)
 	}
+	profiled := FileReport{}
+	addProfileResult(&profiled, []byte(`<Document>`), "broken.xml", profile)
+	if profiled.ErrorCount != 1 || profiled.Profile != nil || !strings.Contains(profiled.Err, "parsing broken.xml") {
+		t.Fatalf("profile failure report = %+v", profiled)
+	}
 
 	xmlPath := writeTemp(t, "instance.xml", `<Document/>`)
 	xsdPath := writeTemp(t, "broken.xsd", `<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">`)

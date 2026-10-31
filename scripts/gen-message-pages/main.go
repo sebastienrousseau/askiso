@@ -61,7 +61,7 @@ func run(outDir, date string) error {
 		return fmt.Errorf("loading registry: %w", err)
 	}
 
-	if err := os.MkdirAll(outDir, 0o755); err != nil {
+	if err := os.MkdirAll(outDir, 0o750); err != nil {
 		return err
 	}
 
@@ -86,7 +86,7 @@ func run(outDir, date string) error {
 		page := buildPage(reg, m, byBase[m.BaseCode], mtFor[m.BaseCode],
 			mxSupported[m.BaseCode], generator.HasTemplate(m.BaseCode), date)
 		path := filepath.Join(outDir, m.ID+".md")
-		if err := os.WriteFile(path, []byte(page), 0o644); err != nil {
+		if err := os.WriteFile(path, []byte(page), 0o600); err != nil {
 			return err
 		}
 	}
@@ -108,6 +108,36 @@ func run(outDir, date string) error {
 // how somebody looking for "the one that moves money between banks" narrows
 // down without knowing it is called pacs.008.
 func writeIndex(reg *registry.Registry, outDir, date string) error {
+	byDomain := groupByDomain(reg)
+	domains := sortedDomains(byDomain)
+
+	var b strings.Builder
+	writeIndexFrontMatter(&b, reg, date, len(domains))
+
+	fmt.Fprintf(&b, "## Find a message\n\n")
+	fmt.Fprintf(&b, "If you already know the identifier, search is faster: press "+
+		"<kbd>K</kbd> anywhere on the site and type it. If you do not, the business "+
+		"areas below are how ISO 20022 organises the catalogue.\n\n")
+
+	fmt.Fprintf(&b, "| Business area | Code | Definitions | Versions |\n")
+	fmt.Fprintf(&b, "| --- | --- | ---: | ---: |\n")
+	for _, d := range domains {
+		families := byDomain[d]
+		fmt.Fprintf(&b, "| [%s](#%s) | `%s` | %d | %d |\n",
+			iso20022.DomainName(d), d, d, len(families), versionCount(families))
+	}
+	fmt.Fprintf(&b, "\n")
+
+	for _, d := range domains {
+		writeDomainSection(&b, d, byDomain[d])
+	}
+
+	return os.WriteFile(filepath.Join(outDir, "index.md"), []byte(b.String()), 0o600)
+}
+
+// groupByDomain groups message identifiers by business area, then by base
+// code, so the index can list each family once under its area.
+func groupByDomain(reg *registry.Registry) map[string]map[string][]string {
 	// Group by domain, then by base code, keeping only the latest version in
 	// the headline listing: a reader wants "pacs.008", not eleven rows of it.
 	byDomain := map[string]map[string][]string{}
@@ -117,7 +147,12 @@ func writeIndex(reg *registry.Registry, outDir, date string) error {
 		}
 		byDomain[m.Domain][m.BaseCode] = append(byDomain[m.Domain][m.BaseCode], m.ID)
 	}
+	return byDomain
+}
 
+// sortedDomains orders the business areas for the index: the ranked ones
+// first, then the rest alphabetically.
+func sortedDomains(byDomain map[string]map[string][]string) []string {
 	domains := make([]string, 0, len(byDomain))
 	for d := range byDomain {
 		domains = append(domains, d)
@@ -131,102 +166,93 @@ func writeIndex(reg *registry.Registry, outDir, date string) error {
 		}
 		return domains[i] < domains[j]
 	})
+	return domains
+}
 
-	var b strings.Builder
-	fmt.Fprintf(&b, "---\n")
-	fmt.Fprintf(&b, "name: %q\n", "AskISO")
-	fmt.Fprintf(&b, "short_name: %q\n", "AskISO")
-	fmt.Fprintf(&b, "title: %q\n", "ISO 20022 message reference")
-	fmt.Fprintf(&b, "description: %q\n",
+// versionCount totals the versions across every family in a business area.
+func versionCount(families map[string][]string) int {
+	total := 0
+	for _, ids := range families {
+		total += len(ids)
+	}
+	return total
+}
+
+// writeIndexFrontMatter writes the index page's front matter: its title,
+// search description and headline. domains is the number of business areas.
+func writeIndexFrontMatter(b *strings.Builder, reg *registry.Registry, date string, domains int) {
+	fmt.Fprintf(b, "---\n")
+	fmt.Fprintf(b, "name: %q\n", "AskISO")
+	fmt.Fprintf(b, "short_name: %q\n", "AskISO")
+	fmt.Fprintf(b, "title: %q\n", "ISO 20022 message reference")
+	fmt.Fprintf(b, "description: %q\n",
 		fmt.Sprintf("Browse all %s ISO 20022 message definitions by business area: "+
 			"every version, what replaced it, and where to get the schema.",
 			commas(len(reg.Messages))))
-	fmt.Fprintf(&b, "keywords: %q\n",
+	fmt.Fprintf(b, "keywords: %q\n",
 		"ISO 20022 message reference, ISO 20022 message types, pacs, pain, camt, "+
 			"seev, sese, ISO 20022 message list")
-	fmt.Fprintf(&b, "author: %q\n", "Sebastien Rousseau")
-	fmt.Fprintf(&b, "date: %q\n", date)
-	fmt.Fprintf(&b, "layout: %q\n", "page")
-	fmt.Fprintf(&b, "language: %q\n", "en-GB")
-	fmt.Fprintf(&b, "schema: %q\n", "page")
-	fmt.Fprintf(&b, "changefreq: %q\n", "weekly")
-	fmt.Fprintf(&b, "copyright_year: %q\n", "2026")
-	fmt.Fprintf(&b, "form_origin: %q\n", "https://askiso.io")
-	fmt.Fprintf(&b, "news_publication_date: %q\n", date)
-	fmt.Fprintf(&b, "nav_messages: %q\n", "true")
-	fmt.Fprintf(&b, "banner: %q\n", "digital-constellation")
-	fmt.Fprintf(&b, "banner_alt: %q\n",
+	fmt.Fprintf(b, "author: %q\n", "Sebastien Rousseau")
+	fmt.Fprintf(b, "date: %q\n", date)
+	fmt.Fprintf(b, "layout: %q\n", "page")
+	fmt.Fprintf(b, "language: %q\n", "en-GB")
+	fmt.Fprintf(b, "schema: %q\n", "page")
+	fmt.Fprintf(b, "changefreq: %q\n", "weekly")
+	fmt.Fprintf(b, "copyright_year: %q\n", "2026")
+	fmt.Fprintf(b, "form_origin: %q\n", "https://askiso.io")
+	fmt.Fprintf(b, "news_publication_date: %q\n", date)
+	fmt.Fprintf(b, "nav_messages: %q\n", "true")
+	fmt.Fprintf(b, "banner: %q\n", "digital-constellation")
+	fmt.Fprintf(b, "banner_alt: %q\n",
 		"A network of connected points, drawn in blue and cyan.")
-	fmt.Fprintf(&b, "eyebrow: %q\n", "Reference")
-	fmt.Fprintf(&b, "headline: %q\n", "Every ISO 20022 message")
-	fmt.Fprintf(&b, "lead: %q\n", fmt.Sprintf(
+	fmt.Fprintf(b, "eyebrow: %q\n", "Reference")
+	fmt.Fprintf(b, "headline: %q\n", "Every ISO 20022 message")
+	fmt.Fprintf(b, "lead: %q\n", fmt.Sprintf(
 		"%s definitions across %d business areas. Find the one you need, see every "+
 			"version of it, and go straight to the Registration Authority for the schema.",
-		commas(len(reg.Messages)), len(domains)))
-	fmt.Fprintf(&b, "---\n\n")
+		commas(len(reg.Messages)), domains))
+	fmt.Fprintf(b, "---\n\n")
+}
 
-	fmt.Fprintf(&b, "## Find a message\n\n")
-	fmt.Fprintf(&b, "If you already know the identifier, search is faster: press "+
-		"<kbd>K</kbd> anywhere on the site and type it. If you do not, the business "+
-		"areas below are how ISO 20022 organises the catalogue.\n\n")
-
-	fmt.Fprintf(&b, "| Business area | Code | Definitions | Versions |\n")
-	fmt.Fprintf(&b, "| --- | --- | ---: | ---: |\n")
-	for _, d := range domains {
-		families := byDomain[d]
-		total := 0
-		for _, v := range families {
-			total += len(v)
-		}
-		fmt.Fprintf(&b, "| [%s](#%s) | `%s` | %d | %d |\n",
-			iso20022.DomainName(d), d, d, len(families), total)
+// writeDomainSection writes one business area of the index: its heading, its
+// totals, and one line per family pointing at the current version.
+func writeDomainSection(b *strings.Builder, d string, families map[string][]string) {
+	bases := make([]string, 0, len(families))
+	for base := range families {
+		bases = append(bases, base)
 	}
-	fmt.Fprintf(&b, "\n")
+	sort.Strings(bases)
 
-	for _, d := range domains {
-		families := byDomain[d]
-		bases := make([]string, 0, len(families))
-		for base := range families {
-			bases = append(bases, base)
-		}
-		sort.Strings(bases)
+	fmt.Fprintf(b, "## %s\n\n", iso20022.DomainName(d))
+	total := versionCount(families)
+	fmt.Fprintf(b, "`%s` — %d %s, %d %s in total.\n\n",
+		d, len(bases), plural(len(bases), "definition", "definitions"),
+		total, plural(total, "version", "versions"))
 
-		fmt.Fprintf(&b, "## %s\n\n", iso20022.DomainName(d))
-		total := 0
-		for _, ids := range families {
-			total += len(ids)
-		}
-		fmt.Fprintf(&b, "`%s` — %d %s, %d %s in total.\n\n",
-			d, len(bases), plural(len(bases), "definition", "definitions"),
-			total, plural(total, "version", "versions"))
-
-		// One line per family, pointing at the current version. Listing all
-		// fourteen versions of pacs.002 inline makes the index unreadable, and
-		// the version lineage already lives on the message page itself -- which
-		// is the right place for a reader who needs the one their counterparty
-		// actually sends.
-		for _, base := range bases {
-			ids := families[base]
-			sort.Strings(ids)
-			latest := ids[len(ids)-1]
-			// The full identifier, not the bare version number: version numbers
-			// are not contiguous, so "14 versions, current is 15" reads as an
-			// arithmetic mistake when it is simply how the standard numbers them.
-			// Root-relative, not document-relative. GitHub Pages serves
-			// /messages without redirecting to /messages/, so a bare
-			// "pacs.008.001.13/" resolved against the wrong base and every link
-			// on this page 404ed for anyone who arrived without the slash.
-			// The identifier appeared twice on every line: once in the link
-			// and once after it. On an index of 664 families that repetition
-			// was 23KB of the page, and the link already goes to the version
-			// it names.
-			fmt.Fprintf(&b, "- [%s](/messages/%s/) — %d %s\n",
-				base, latest, len(ids), plural(len(ids), "version", "versions"))
-		}
-		fmt.Fprintf(&b, "\n")
+	// One line per family, pointing at the current version. Listing all
+	// fourteen versions of pacs.002 inline makes the index unreadable, and
+	// the version lineage already lives on the message page itself -- which
+	// is the right place for a reader who needs the one their counterparty
+	// actually sends.
+	for _, base := range bases {
+		ids := families[base]
+		sort.Strings(ids)
+		latest := ids[len(ids)-1]
+		// The full identifier, not the bare version number: version numbers
+		// are not contiguous, so "14 versions, current is 15" reads as an
+		// arithmetic mistake when it is simply how the standard numbers them.
+		// Root-relative, not document-relative. GitHub Pages serves
+		// /messages without redirecting to /messages/, so a bare
+		// "pacs.008.001.13/" resolved against the wrong base and every link
+		// on this page 404ed for anyone who arrived without the slash.
+		// The identifier appeared twice on every line: once in the link
+		// and once after it. On an index of 664 families that repetition
+		// was 23KB of the page, and the link already goes to the version
+		// it names.
+		fmt.Fprintf(b, "- [%s](/messages/%s/) — %d %s\n",
+			base, latest, len(ids), plural(len(ids), "version", "versions"))
 	}
-
-	return os.WriteFile(filepath.Join(outDir, "index.md"), []byte(b.String()), 0o644)
+	fmt.Fprintf(b, "\n")
 }
 
 // domainRank puts the business areas most visitors arrive for at the top. Every

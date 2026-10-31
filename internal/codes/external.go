@@ -219,7 +219,7 @@ func ImportExternalSets(path string) (*ExternalSets, error) {
 // The publication has moved between shapes over the years, so this accepts the
 // two that occur: an array of records, and an object whose keys are set names.
 func importExternalJSON(path string) (*ExternalSets, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("reading %s: %w", path, err)
 	}
@@ -321,7 +321,7 @@ func publicationFromName(name string) string {
 }
 
 func externalFileSHA256(path string) (string, error) {
-	f, err := os.Open(path)
+	f, err := os.Open(filepath.Clean(path))
 	if err != nil {
 		return "", fmt.Errorf("fingerprinting %s: %w", filepath.Base(path), err)
 	}

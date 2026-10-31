@@ -8,12 +8,14 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 
 	"github.com/sebastienrousseau/askiso/internal/atomicfile"
+	"github.com/sebastienrousseau/askiso/internal/fsperm"
 )
 
 // An imported publication lives beside the catalogue it belongs to, in a form
@@ -40,18 +42,34 @@ func SaveExternalSets(root string, sets *ExternalSets) (string, error) {
 	}
 
 	path := ExternalCodesPath(root)
-	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-		return "", fmt.Errorf("creating %s: %w", filepath.Dir(path), err)
+	if err := prepareExternalStore(path); err != nil {
+		return "", err
 	}
-	if err := os.Chmod(filepath.Dir(path), 0o700); err != nil {
-		return "", fmt.Errorf("protecting %s: %w", filepath.Dir(path), err)
+	if err := atomicfile.Write(path, encodeExternalSets(sets), 0o600); err != nil {
+		return "", fmt.Errorf("writing %s: %w", path, err)
+	}
+	return path, nil
+}
+
+// prepareExternalStore creates the private directory the store lives in and
+// refuses a store that has been replaced by a symlink.
+func prepareExternalStore(path string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return fmt.Errorf("creating %s: %w", filepath.Dir(path), err)
+	}
+	if err := fsperm.PrivateDir(filepath.Dir(path)); err != nil {
+		return fmt.Errorf("protecting %s: %w", filepath.Dir(path), err)
 	}
 	if info, err := os.Lstat(path); err == nil && info.Mode()&os.ModeSymlink != 0 {
-		return "", fmt.Errorf("refusing to overwrite symlinked external code store: %s", path)
+		return fmt.Errorf("refusing to overwrite symlinked external code store: %s", path)
 	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return "", fmt.Errorf("checking %s: %w", path, err)
+		return fmt.Errorf("checking %s: %w", path, err)
 	}
+	return nil
+}
 
+// encodeExternalSets renders a publication in the store's tab-separated form.
+func encodeExternalSets(sets *ExternalSets) []byte {
 	var w bytes.Buffer
 	_, _ = fmt.Fprintf(&w, "# ISO 20022 external code sets, imported by AskISO from %s\n",
 		filepath.Base(sets.Source))
@@ -63,10 +81,7 @@ func SaveExternalSets(root string, sets *ExternalSets) (string, error) {
 		_, _ = fmt.Fprintf(&w, "%s\t%s\t%s\t%s\n",
 			clean(c.Set), clean(c.Code), clean(c.Name), clean(c.Definition))
 	}
-	if err := atomicfile.Write(path, w.Bytes(), 0o600); err != nil {
-		return "", fmt.Errorf("writing %s: %w", path, err)
-	}
-	return path, nil
+	return w.Bytes()
 }
 
 // clean removes the characters the format cannot carry. A definition with a
@@ -85,61 +100,14 @@ func LoadExternalSets(root string) (*ExternalSets, error) {
 	}
 	path := ExternalCodesPath(root)
 
-	f, err := os.Open(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			// Absent is fine. A store directory that has become a file is
-			// not: Unix reports ENOTDIR for that, which is an error, but
-			// Windows reports path-not-found, which would pass as absent.
-			if info, statErr := os.Stat(filepath.Dir(path)); statErr == nil && !info.IsDir() {
-				return nil, fmt.Errorf("reading %s: %s is not a directory", path, filepath.Dir(path))
-			}
-			return nil, nil
-		}
-		return nil, fmt.Errorf("reading %s: %w", path, err)
+	f, err := openExternalStore(path)
+	if err != nil || f == nil {
+		return nil, err
 	}
 	defer func() { _ = f.Close() }()
 
 	out := &ExternalSets{Source: path}
-
-	sc := bufio.NewScanner(f)
-	sc.Buffer(make([]byte, 0, 64<<10), 1<<20)
-	for sc.Scan() {
-		line := sc.Text()
-		if strings.HasPrefix(line, "# format=") {
-			for _, field := range strings.Fields(strings.TrimPrefix(line, "# ")) {
-				key, value, ok := strings.Cut(field, "=")
-				if !ok {
-					continue
-				}
-				switch key {
-				case "format":
-					out.Format = value
-				case "publication":
-					out.Publication = value
-				case "sha256":
-					out.SHA256 = value
-				}
-			}
-			continue
-		}
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		parts := strings.Split(line, "\t")
-		if len(parts) < 2 {
-			continue
-		}
-		code := ExternalCode{Set: parts[0], Code: parts[1]}
-		if len(parts) > 2 {
-			code.Name = parts[2]
-		}
-		if len(parts) > 3 {
-			code.Definition = parts[3]
-		}
-		out.Codes = append(out.Codes, code)
-	}
-	if err := sc.Err(); err != nil {
+	if err := scanExternalSets(f, out); err != nil {
 		return nil, fmt.Errorf("reading %s: %w", path, err)
 	}
 
@@ -148,6 +116,81 @@ func LoadExternalSets(root string) (*ExternalSets, error) {
 	}
 	out.index()
 	return out, nil
+}
+
+// openExternalStore opens the publication stored at path. An absent store
+// returns a nil file and no error.
+func openExternalStore(path string) (*os.File, error) {
+	f, err := os.Open(filepath.Clean(path))
+	if err == nil {
+		return f, nil
+	}
+	if !os.IsNotExist(err) {
+		return nil, fmt.Errorf("reading %s: %w", path, err)
+	}
+	// Absent is fine. A store directory that has become a file is
+	// not: Unix reports ENOTDIR for that, which is an error, but
+	// Windows reports path-not-found, which would pass as absent.
+	if info, statErr := os.Stat(filepath.Dir(path)); statErr == nil && !info.IsDir() {
+		return nil, fmt.Errorf("reading %s: %s is not a directory", path, filepath.Dir(path))
+	}
+	return nil, nil
+}
+
+// scanExternalSets reads the store's header and rows into out.
+func scanExternalSets(r io.Reader, out *ExternalSets) error {
+	sc := bufio.NewScanner(r)
+	sc.Buffer(make([]byte, 0, 64<<10), 1<<20)
+	for sc.Scan() {
+		line := sc.Text()
+		if strings.HasPrefix(line, "# format=") {
+			readExternalHeader(out, line)
+			continue
+		}
+		if code, ok := parseExternalCode(line); ok {
+			out.Codes = append(out.Codes, code)
+		}
+	}
+	return sc.Err()
+}
+
+// readExternalHeader takes the format, publication and digest from the
+// store's "# format=" line.
+func readExternalHeader(out *ExternalSets, line string) {
+	for _, field := range strings.Fields(strings.TrimPrefix(line, "# ")) {
+		key, value, ok := strings.Cut(field, "=")
+		if !ok {
+			continue
+		}
+		switch key {
+		case "format":
+			out.Format = value
+		case "publication":
+			out.Publication = value
+		case "sha256":
+			out.SHA256 = value
+		}
+	}
+}
+
+// parseExternalCode reads one row of the store. Blank lines, comments and rows
+// without both a set and a code are not codes.
+func parseExternalCode(line string) (ExternalCode, bool) {
+	if line == "" || strings.HasPrefix(line, "#") {
+		return ExternalCode{}, false
+	}
+	parts := strings.Split(line, "\t")
+	if len(parts) < 2 {
+		return ExternalCode{}, false
+	}
+	code := ExternalCode{Set: parts[0], Code: parts[1]}
+	if len(parts) > 2 {
+		code.Name = parts[2]
+	}
+	if len(parts) > 3 {
+		code.Definition = parts[3]
+	}
+	return code, true
 }
 
 var (

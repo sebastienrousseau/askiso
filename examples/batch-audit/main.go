@@ -23,49 +23,62 @@ import (
 	"github.com/sebastienrousseau/askiso/pkg/iso20022"
 )
 
+// audit tallies what the CBPR+ 2026 profile found across a tree of messages.
+type audit struct {
+	byRule  map[string]int
+	checked int
+	clean   int
+}
+
 func main() {
 	dir := "."
 	if len(os.Args) > 1 {
 		dir = os.Args[1]
 	}
 
-	byRule := map[string]int{}
-	var checked, clean int
-
-	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() || !strings.EqualFold(filepath.Ext(path), ".xml") {
-			return err
-		}
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		res, err := iso20022.CheckProfile(data, "cbpr-2026", path)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "skipping %s: %v\n", path, err)
-			return nil
-		}
-		checked++
-		if res.Valid() {
-			clean++
-		}
-		for _, f := range res.Findings {
-			byRule[f.RuleID]++
-		}
-		return nil
-	})
-	if err != nil {
+	a := &audit{byRule: map[string]int{}}
+	if err := filepath.WalkDir(dir, a.visit); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 
-	if checked == 0 {
+	if a.checked == 0 {
 		fmt.Printf("no XML messages found under %s\n", dir)
 		return
 	}
 
-	fmt.Printf("%d message(s): %d ready, %d not\n\n", checked, clean, checked-clean)
+	fmt.Printf("%d message(s): %d ready, %d not\n\n", a.checked, a.clean, a.checked-a.clean)
+	printByRule(a.byRule)
+}
 
+// visit is the WalkDir callback: it checks one XML file against the profile
+// and records its findings. A file the checker cannot read as a message is
+// reported and skipped rather than ending the walk.
+func (a *audit) visit(path string, d fs.DirEntry, err error) error {
+	if err != nil || d.IsDir() || !strings.EqualFold(filepath.Ext(path), ".xml") {
+		return err
+	}
+	data, err := os.ReadFile(filepath.Clean(path))
+	if err != nil {
+		return err
+	}
+	res, err := iso20022.CheckProfile(data, "cbpr-2026", path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "skipping %s: %v\n", path, err)
+		return nil
+	}
+	a.checked++
+	if res.Valid() {
+		a.clean++
+	}
+	for _, f := range res.Findings {
+		a.byRule[f.RuleID]++
+	}
+	return nil
+}
+
+// printByRule ranks the rules by how many findings each produced.
+func printByRule(byRule map[string]int) {
 	type row struct {
 		rule string
 		n    int

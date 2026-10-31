@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/sebastienrousseau/askiso/internal/translator"
@@ -116,7 +117,7 @@ func printMatrix() {
 }
 
 func translateFile(path string) error {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return err
 	}
@@ -138,7 +139,7 @@ func translateFile(path string) error {
 	}
 
 	if translateOut != "" {
-		if err := os.WriteFile(translateOut, []byte(conv.XML+"\n"), 0o644); err != nil {
+		if err := os.WriteFile(translateOut, []byte(conv.XML+"\n"), 0o600); err != nil {
 			return err
 		}
 	} else if !translateReport {

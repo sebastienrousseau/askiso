@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/atotto/clipboard"
 	"github.com/sebastienrousseau/askiso/internal/catalog"
@@ -51,7 +52,7 @@ for any ISO 20022 message with terminal syntax highlighting and clipboard export
 			return err
 		}
 
-		data, err := os.ReadFile(targetPath)
+		data, err := os.ReadFile(filepath.Clean(targetPath))
 		if err != nil {
 			return fmt.Errorf("failed to read schema file: %w", err)
 		}

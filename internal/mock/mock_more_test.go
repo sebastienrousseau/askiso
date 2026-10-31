@@ -522,3 +522,14 @@ func TestShutdownIsClean(t *testing.T) {
 		t.Error("Start did not return after Shutdown")
 	}
 }
+
+// The sequence seed comes from the clock; a clock before 1970 must start the
+// sequence at zero rather than wrap a negative UnixNano into a huge value.
+func TestClockSeed(t *testing.T) {
+	if got := clockSeed(time.Unix(0, -1)); got != 0 {
+		t.Errorf("clockSeed before the epoch = %d, want 0", got)
+	}
+	if got := clockSeed(time.Unix(0, 42)); got != 42 {
+		t.Errorf("clockSeed(42ns) = %d, want 42", got)
+	}
+}
