@@ -38,6 +38,13 @@ jobs:
       # definition. This step had its own copy of both, and drifted: it still
       # enforced a stale floor after the main gate moved, and it counted packages the
       # Makefile had already excluded.
+      # The release page's highlights are the one hand-written part of it
+      # (AGENTS.md §3). A tag without them would build and upload everything
+      # and then fail at the page, so they are checked before anything is
+      # built.
+      - name: Release highlights exist
+        run: test -s "docs/releases/${GITHUB_REF_NAME}.md"
+
       - name: Test with the coverage floor
         run: make cover
 
@@ -98,3 +105,13 @@ jobs:
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: 'dist/checksums.txt'
+
+      # goreleaser names the release and uploads the assets; this writes the
+      # page in the portfolio layout: the highlights from
+      # docs/releases/<tag>.md, GitHub's pull-request notes, the SHA-256 of
+      # every asset as uploaded, and the Full Changelog link. It reads the
+      # page back and fails unless GitHub shows exactly what was composed.
+      - name: Publish the release page
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: go run ./scripts/releasepage -name askiso -tag "${GITHUB_REF_NAME}" -publish
