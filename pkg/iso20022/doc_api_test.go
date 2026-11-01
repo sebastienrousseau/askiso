@@ -7,7 +7,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"io/fs"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -16,21 +16,24 @@ import (
 // read it. An exported identifier without a doc comment renders there as a
 // bare signature, so every one must carry a comment.
 func TestPublicAPIIsDocumented(t *testing.T) {
-	fset := token.NewFileSet()
-	pkgs, err := parser.ParseDir(fset, ".", nonTest, parser.ParseComments)
+	files, err := filepath.Glob("*.go")
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, p := range pkgs {
-		for _, f := range p.Files {
-			for _, name := range undocumented(f) {
-				t.Errorf("%s has no doc comment", name)
-			}
+	fset := token.NewFileSet()
+	for _, name := range files {
+		if strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		f, err := parser.ParseFile(fset, name, nil, parser.ParseComments)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, id := range undocumented(f) {
+			t.Errorf("%s: %s has no doc comment", name, id)
 		}
 	}
 }
-
-func nonTest(fi fs.FileInfo) bool { return !strings.HasSuffix(fi.Name(), "_test.go") }
 
 // undocumented lists the exported declarations in f that have no doc
 // comment.
