@@ -263,7 +263,7 @@ func assetFiles(o options, gh runner, dir string) (bool, []string, error) {
 func checksums(files []string) ([]asset, error) {
 	sums := make([]asset, 0, len(files))
 	for _, f := range files {
-		b, err := os.ReadFile(f) // #nosec G304 G703 -- the operator's or the release's own asset
+		b, err := os.ReadFile(filepath.Clean(f))
 		if err != nil {
 			return nil, err
 		}
