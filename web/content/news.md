@@ -38,7 +38,18 @@ To follow along without visiting: subscribe to the [feed](/rss.xml) in any
 reader, watch releases on GitHub, or ask on the [contact page](/contact/) to be
 told by email when something changes that affects the messages you send.
 
-## v0.0.5 - 31 October 2026
+## v0.0.6 - 1 November 2026
+
+The release notes update. Every release page on GitHub now has the same
+shape: its name and version, what changed and why, the pull requests that
+changed it, and a checksum for every download. The command in the README for
+checking a download against its signature works again, since it had named
+files that releases no longer ship. The README has a new layout shared with
+our other projects, with a short demo, a changelog and a guide to how the code
+fits together. The site now builds with ssg 0.0.71.
+[Read the v0.0.6 release notes and download it](https://github.com/sebastienrousseau/askiso/releases/tag/v0.0.6).
+
+## v0.0.5 - 1 November 2026
 
 The file permissions update. AskISO now requires Go 1.26.10 and
 golang.org/x/net v0.62.0, which resolve three security advisories that
@@ -46,7 +57,9 @@ govulncheck reported against Go 1.26.9 and x/net v0.60.0. Every file it writes
 is now private to your account: an imported catalogue, a message translated
 with --out, and the directories containing them are no longer readable by
 other users on the same machine. The static security scan of the source code
-now comes back clean.
+now comes back clean. On the site, a screen reader now announces the search
+button together with its keyboard shortcut.
+[Read the v0.0.5 release notes and download it](https://github.com/sebastienrousseau/askiso/releases/tag/v0.0.5).
 
 ## v0.0.4 - 12 October 2026
 
