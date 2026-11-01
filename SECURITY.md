@@ -4,9 +4,13 @@
 
 ## Supported Versions
 
+Security fixes ship in the next 0.0.x release, so only the latest release
+is supported.
+
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
+| Latest 0.0.x release | :white_check_mark: |
+| Earlier releases | :x: |
 
 ---
 
@@ -15,15 +19,19 @@
 AskISO is engineered specifically for mission-critical financial messaging environments:
 
 ### 1. XML External Entity (XXE) Protection
+
 * AskISO executes XML schema validation in isolated sandboxes using pure-Go XML parsers and `xmllint` with `--nonet` network isolation enabled, preventing SSRF and file disclosure attacks.
 
 ### 2. Cryptographic Randomness
+
 * All generated transaction identifiers (`UETR`, `EndToEndId`) use cryptographically secure random number generators (`crypto/rand`), satisfying RFC 4122 Version 4 standards.
 
 ### 3. No Bundled Specifications
+
 * AskISO reads ISO 20022 schemas that you obtain from the Registration Authority. It ships no specification content, so a compromised release cannot substitute altered schemas for the ones you downloaded.
 
 ### 4. Untrusted Input Handling
+
 * The catalogue scanner, XML parser, and linter treat all input as untrusted. AskISO's pure-Go parser rejects DTD entity references before any external tool is invoked, so `xmllint` never receives hostile input.
 
 ---

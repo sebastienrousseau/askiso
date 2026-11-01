@@ -86,14 +86,12 @@ checksum:
 snapshot:
   version_template: '{{ incpatch .Version }}-next'
 
+# The release page is written by scripts/releasepage after goreleaser has
+# uploaded the assets: highlights from docs/releases/<tag>.md, GitHub's
+# pull-request notes, and the SHA-256 of every asset. goreleaser's own
+# changelog would only be replaced, so it is not generated.
 changelog:
-  sort: asc
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
-      - '^chore:'
-      - '^ci:'
+  disable: true
 
 # A software bill of materials per archive. Anyone running a payments tool needs
 # to be able to answer what is inside it without unpacking the binary.
@@ -103,9 +101,9 @@ sboms:
 # Keyless signing through Sigstore: no key to store, no key to leak, and the
 # certificate records which workflow and which commit produced the artifact.
 # Verify with:
-#   cosign verify-blob --signature <artifact>.sig --certificate <artifact>.pem \
+#   cosign verify-blob checksums.txt --bundle checksums.txt.sigstore.json \
 #     --certificate-identity-regexp 'https://github.com/sebastienrousseau/askiso/.*' \
-#     --certificate-oidc-issuer https://token.actions.githubusercontent.com <artifact>
+#     --certificate-oidc-issuer https://token.actions.githubusercontent.com
 # Sigstore keyless signing over the checksum file, which transitively covers
 # every artifact listed in it.
 #
@@ -193,26 +191,9 @@ scoops:
     description: ISO 20022 reference tooling for the terminal, an editor, and an AI assistant
     license: Apache-2.0 OR MIT
 
+# The title is "askiso <version>", never the bare tag (AGENTS.md §3). The
+# body goreleaser writes is a placeholder: scripts/releasepage replaces it
+# with the portfolio layout once every asset is uploaded, and reads it back.
 release:
   prerelease: auto
-  footer: |
-    ## Verifying this release
-
-    Every checksum file is signed with Sigstore, keylessly. The certificate
-    records the workflow and the commit that produced it:
-
-    ```
-    cosign verify-blob checksums.txt \
-      --bundle checksums.txt.sigstore.json \
-      --certificate-identity-regexp 'https://github.com/sebastienrousseau/askiso/.*' \
-      --certificate-oidc-issuer https://token.actions.githubusercontent.com
-    ```
-
-    The bundle carries both the signature and the certificate; it replaces the
-    separate `.sig` and `.pem` files that older cosign releases produced.
-
-    ## What is in the archive
-
-    `askiso` (CLI and TUI), `askiso-mcp` (Model Context Protocol server) and
-    `askiso-lsp` (language server). AskISO redistributes no ISO 20022
-    specification content.
+  name_template: '{{ .ProjectName }} {{ .Version }}'

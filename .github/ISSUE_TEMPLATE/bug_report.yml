@@ -1,0 +1,77 @@
+# SPDX-FileCopyrightText: 2026 Sebastien Rousseau <sebastian.rousseau@gmail.com>
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+name: Bug report
+description: A message AskISO validated, translated or explained wrongly, or a command that misbehaved
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If this is a security issue, such as a file written readable by others
+        or a path that escapes the catalogue, **stop** and report it privately
+        through [GitHub's private vulnerability reporting](https://github.com/sebastienrousseau/askiso/security/advisories/new)
+        instead. See [SECURITY.md](https://github.com/sebastienrousseau/askiso/blob/main/SECURITY.md).
+
+        Do not paste real payment messages: redact names, accounts and amounts,
+        or use one of the samples in `examples/`.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did AskISO print? Paste the output or the error, not a summary of it.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+      description: If a result is wrong, say what the message definition or usage guideline actually requires, and where that is stated.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: The exact command, including flags, and a redacted message if one is needed.
+      render: shell
+      placeholder: askiso validate payment.xml
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: AskISO version
+      description: Output of `askiso version`.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where it happened
+      options:
+        - askiso (CLI or terminal UI)
+        - askiso-mcp (AI assistant)
+        - askiso-lsp (editor)
+        - GitHub Action
+        - askiso.io website
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Linux
+        - Windows
+        - WSL2
+    validations:
+      required: true

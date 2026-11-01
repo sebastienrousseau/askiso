@@ -1,70 +1,81 @@
 <!-- SPDX-License-Identifier: Apache-2.0 OR MIT -->
+<!--
+README layout: ~/Code/README-TEMPLATE.md. scripts/readme-check.sh (make
+readme-check, run by make ci) fails on any drift from its headings, badge
+row and demo block.
+-->
 
 <p align="center">
-  <img src="logo.svg" alt="AskISO" width="128" />
+  <img src="logo.svg" alt="AskISO logo" width="128" />
 </p>
 
 <h1 align="center">AskISO</h1>
 
 <p align="center">
-  <strong>The ISO 20022 command line.</strong><br>
-  Search, inspect, validate, lint, and generate ISO 20022 messages from your terminal.
+  The ISO 20022 command line: search, inspect, validate, lint, convert and generate ISO 20022 messages from your terminal, your editor, an AI assistant or CI.
 </p>
 
 <p align="center">
-  <a href="https://github.com/sebastienrousseau/askiso/actions"><img src="https://img.shields.io/github/actions/workflow/status/sebastienrousseau/askiso/ci.yml?style=for-the-badge&logo=github" alt="Build" /></a>
-  <a href="https://www.iso20022.org"><img src="https://img.shields.io/badge/standard-ISO%2020022-blue.svg?style=for-the-badge" alt="ISO 20022" /></a>
-  <a href="LICENSE-APACHE"><img src="https://img.shields.io/badge/license-Apache%202.0%20%2F%20MIT-orange.svg?style=for-the-badge" alt="License" /></a>
-  <a href="https://scorecard.dev/viewer/?uri=github.com/sebastienrousseau/askiso"><img src="https://img.shields.io/ossf-scorecard/github.com/sebastienrousseau/askiso?style=for-the-badge&label=OpenSSF%20Scorecard&logo=openssf" alt="OpenSSF Scorecard" /></a>
+  <a href="https://github.com/sebastienrousseau/askiso/actions"><img src="https://img.shields.io/github/actions/workflow/status/sebastienrousseau/askiso/ci.yml?style=for-the-badge&logo=github" alt="Build" height="28" /></a>
+  <a href="https://pkg.go.dev/github.com/sebastienrousseau/askiso"><img src="https://img.shields.io/github/v/release/sebastienrousseau/askiso?style=for-the-badge&color=fc8d62&logo=go" alt="Registry" height="28" /></a>
+  <a href="https://pkg.go.dev/github.com/sebastienrousseau/askiso/pkg/iso20022"><img src="https://img.shields.io/badge/docs-pkg.go.dev-007d9c?style=for-the-badge&labelColor=555555&logo=go" alt="Docs" height="28" /></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/sebastienrousseau/askiso"><img src="https://img.shields.io/ossf-scorecard/github.com/sebastienrousseau/askiso?style=for-the-badge&label=OpenSSF%20Scorecard&logo=openssf" alt="OpenSSF Scorecard" height="28" /></a>
+  <a href="LICENSE-APACHE"><img src="https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue.svg?style=for-the-badge" alt="License: Apache-2.0 OR MIT" height="28" /></a>
+  <a href="go.mod"><img src="https://img.shields.io/badge/go-1.26.10%2B-93450a.svg?style=for-the-badge&logo=go" alt="Go 1.26.10+" height="28" /></a>
+</p>
+
+<p align="center">
+  <img src=".github/demo.gif" alt="A terminal running askiso search pacs.008 against the embedded index, askiso lint payment.xml --profile cbpr-2026 reporting three structured-address errors, and askiso translate payment.mt103 --report showing the field-by-field fidelity report" width="100%" />
 </p>
 
 ---
 
-## Try it without installing anything
+## Contents
 
-**[The web version](https://askiso.io)** runs the same engine
-compiled to WebAssembly. Lint, generate, browse, convert, look up codes and check
-IBAN/BIC/UETR values in the browser.
+**Getting started**
 
-Your messages never leave the tab — there is no server to send them to. That matters when
-the payload is a real payment instruction.
+- [Install](#install) - `go install`, signed release archives, Linux packages, or the browser with nothing installed
+- [Requirements](#requirements) - toolchain floor, platforms
+- [Quick Start](#quick-start) - search, lint for the structured-address requirement, and convert an MT103, with no catalogue
 
-Or run the identical bundle locally with `make web-serve`.
+**The AskISO ecosystem**
 
----
+- [The AskISO ecosystem](#the-askiso-ecosystem) - CLI and TUI, MCP server, language server, Go SDK, website, GitHub Action
 
-## What AskISO is
+**Library reference**
 
-AskISO is a single Go binary for working with ISO 20022 financial messages. It gives you
-fuzzy search across the whole message catalogue, a Bubble Tea TUI, schema and sample
-viewers, a semantic business-rule linter, synthetic message generation, MT ⇄ MX
-cross-references, and a mock clearing rail — without leaving the terminal.
+- [Capabilities at a glance](#capabilities-at-a-glance) - the current surface by theme
+- [Ecosystem comparison](#ecosystem-comparison) - what AskISO is measured against
+- [Benchmarks](#benchmarks) - what has been measured, and what has not
+- [Features](#features) - commands, rule profiles, validation, private CBPR+ guidelines
+- [Configuration](#configuration) - the catalogue, environment variables, editor settings
+- [Examples](#examples) - runnable example index
 
-**AskISO does not redistribute ISO 20022 specifications.** The Registration Authority
-publishes them free of charge at [iso20022.org](https://www.iso20022.org/); you download
-what you need and point AskISO at it. That keeps the binary small, keeps your schemas
-current, and means the specification content you validate against comes from the source
-of truth rather than a mirror of unknown age.
+**Operational**
 
-> This is not the official ISO 20022 site. The sole source of up-to-date ISO 20022
-> material is <https://www.iso20022.org/>
-
-**AskISO is a developer tool, not regulatory advice.** It reports what it can verify
-against the schemas and rules it was given. A clean result is not an assurance that a
-scheme, a correspondent or a market infrastructure will accept the message — the
-Registration Authority and your scheme operator remain authoritative on that. Where a
-mapping cannot be verified against a published source, AskISO reports the gap rather
-than guessing; [Known limitations](#known-limitations) lists every such case.
+- [When not to use AskISO](#when-not-to-use-askiso) - limitations
+- [Development](#development) - make targets, fuzzing, CI
+- [Security](#security) - guarantees and compliance
+- [Documentation](#documentation) - all reference docs
+- [Stability guarantees](#stability-guarantees) - versioning, output stability, minimum toolchain discipline
+- [License](#license)
 
 ---
 
 ## Install
 
+### As a Go module
+
 ```bash
 go install github.com/sebastienrousseau/askiso/cmd/askiso@latest
+go install github.com/sebastienrousseau/askiso/cmd/askiso-mcp@latest
+go install github.com/sebastienrousseau/askiso/cmd/askiso-lsp@latest
 ```
 
-Or build from source:
+`go install` builds from source and is the quickest way in. The Go SDK is
+`github.com/sebastienrousseau/askiso/pkg/iso20022` (see [Go SDK](#go-sdk)).
+
+### Build from source
 
 ```bash
 git clone https://github.com/sebastienrousseau/askiso
@@ -75,83 +86,301 @@ No external dependencies. Validation is pure Go, so there is no libxml2 or cgo t
 install and results are identical on every platform. `xmllint`, if you have it, can be
 used as a cross-check with `--engine libxml2`.
 
----
+### Release archives and packages
 
-## Getting a catalogue
+Every [release](https://github.com/sebastienrousseau/askiso/releases) attaches
+archives for Linux, macOS and Windows on amd64 and arm64, `.deb`, `.rpm`, `.apk`
+and Arch `.pkg.tar.zst` packages for Linux, an SBOM per archive, and a Sigstore
+signature over the checksums. Each archive carries all three binaries: `askiso`
+(CLI and TUI), `askiso-mcp` (Model Context Protocol server) and `askiso-lsp`
+(language server). AskISO redistributes no ISO 20022 specification content.
 
-AskISO knows about all **2,845 message definitions across 285 published message sets**
-out of the box — that index is embedded, so `search`, `info`, `code`, `translate`,
-`lint` and `generate` work the moment you install it, with no download and no network.
-That includes converting a real SWIFT MT message: `translate payment.mt103` needs no
-schemas, because the target document is built rather than read.
-
-Commands that read the actual XSD files — `schema`, `sample`, `diff`, `stats`,
-`code --sets`, and full `validate` — need a catalogue. Download the message sets you want from the
-[ISO 20022 catalogue of messages](https://www.iso20022.org/iso-20022-message-definitions)
-and import them:
-
-```bash
-askiso catalog fetch pacs.008        # opens the right page, imports what lands
-askiso code --import ~/Downloads/2Q2026_externalcodesets_v3.json # XLSX or JSON Schema
-askiso catalog add ~/Downloads/PaymentsClearingAndSettlement_v11.zip
-askiso catalog add ~/Downloads/*.zip
-askiso catalog add ~/Downloads --dry-run     # see what would happen first
-```
-
-`catalog add` unpacks nested archives (the RA ships zips inside zips), sorts every file
-into the right place, and matches the archive against the official set names so
-`PaymentsClearingAndSettlement_v11.zip` and `payments-clearing-and-settlement.zip` both
-land in one canonical directory.
-
-Not sure what you have? `askiso catalog status` compares your install against the full
-published standard; `askiso catalog where` shows every location AskISO searches.
-
-The layout it produces, which you can also create by hand:
-
-```text
-<catalogue root>/
-└── Payments Clearing and Settlement/
-    ├── Version 11.0/
-    │   ├── Schemas/                    ← required
-    │   │   ├── pacs.008.001.10.xsd
-    │   │   └── pacs.009.001.10.xsd
-    │   ├── Sample Messages/            ← optional
-    │   └── Message Definition Reports/ ← optional
-    └── Version 12.0/
-```
-
-AskISO looks for the catalogue in this order:
-
-| # | Location |
-| :-- | :--- |
-| 1 | `--catalog <path>` |
-| 2 | `$ASKISO_CATALOG` |
-| 3 | `$XDG_DATA_HOME/askiso/catalog`, when that variable is set |
-| 4 | `~/Library/Application Support/askiso/catalog` (macOS) |
-| 5 | `%LocalAppData%\askiso\catalog` (Windows) |
-| 6 | `~/.local/share/askiso/catalog` |
-| 7 | The working directory and its parents |
-
-`HOME` wins over the operating system's own idea of your home directory wherever it is
-set, which matters on Windows, where it is otherwise ignored entirely.
-
-`catalog add` writes to whichever of those already holds a catalogue, so importing more
-message sets extends your existing one rather than quietly starting a second.
+Homebrew and Scoop carry nothing yet: publishing to a tap writes to a second
+repository, and the token for it is not configured. The cask and the manifest are
+built and attached to each release, so adding that token starts publishing them
+without any other change. Once it is, these are the commands:
 
 ```bash
-askiso doctor    # confirms what AskISO found, and fails if it found nothing
+# macOS and Linux
+brew install --cask sebastienrousseau/tap/askiso
+
+# Windows
+scoop bucket add sebastienrousseau https://github.com/sebastienrousseau/scoop-bucket
+scoop install askiso
 ```
 
-If no catalogue is present, commands that need one tell you where AskISO looked and exit
-non-zero. It never reports an empty catalogue as a healthy one.
+The signing certificate records the workflow and the commit that produced the
+artifact, so it can be verified without trusting a key anyone had to store. The
+bundle carries both the signature and the certificate:
 
-> **Keep the catalogue out of cloud-synced folders.** iCloud Drive, Dropbox and OneDrive
-> evict cold files and leave placeholders behind. AskISO detects iCloud placeholders and
-> refuses to parse them, but the local data directory is the reliable home.
+```bash
+cosign verify-blob checksums.txt \
+  --bundle checksums.txt.sigstore.json \
+  --certificate-identity-regexp 'https://github.com/sebastienrousseau/askiso/.*' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+The release workflow also records SLSA build provenance for every artifact listed in
+`checksums.txt`, which `gh` verifies against this repository:
+
+```bash
+gh attestation verify askiso_0.0.6_linux_amd64.tar.gz --owner sebastienrousseau
+```
+
+### Without installing anything
+
+**[The web version](https://askiso.io)** runs the same engine compiled to
+WebAssembly. Lint, generate, browse, convert, look up codes and check
+IBAN/BIC/UETR values in the browser.
+
+Your messages never leave the tab: there is no server to send them to. That
+matters when the payload is a real payment instruction.
+
+Or run the identical bundle locally with `make web-serve`.
 
 ---
 
-## Commands
+## Requirements
+
+- **Go 1.26.10 or newer** to build from source or `go install`. That is a floor
+  rather than a preference: it is the release carrying the standard library fixes
+  for the advisories `govulncheck` reports against anything older, one of which
+  ([GO-2026-6088](https://pkg.go.dev/vuln/GO-2026-6088)) guards `encoding/xml`
+  against unbounded decode recursion, directly on the path every `validate`, `lint`
+  and `convert` takes through untrusted input. The `go` directive in `go.mod`
+  enforces it.
+- **Platforms:** Linux, macOS and Windows. CI tests all three on every push, and
+  releases ship amd64 and arm64 builds of each.
+- **A catalogue is optional.** The index of the standard is embedded; only the
+  commands that read XSD text need the message sets you download from
+  iso20022.org (see [Configuration](#configuration)).
+- **Optional tools:** `xmllint` for the libxml2 cross-check; Poppler's `pdftotext`
+  for reading CBPR+ PDF guidelines; `node` for the website smoke test; `vhs` to
+  re-render the demo.
+
+---
+
+## Quick Start
+
+```bash
+go install github.com/sebastienrousseau/askiso/cmd/askiso@latest
+
+askiso search pacs.008                           # every version, from the embedded index
+askiso lint payment.xml --profile cbpr-2026      # structured-address readiness
+askiso translate payment.mt103 --report          # MT103 to pacs.008, with a fidelity report
+askiso generate pacs.008                         # a template message, no catalogue needed
+askiso doctor                                    # what AskISO found on this machine
+```
+
+None of these needs a download or the network: search, lint, translate and
+template generation run from the index embedded in the binary. The demo above runs
+the first three against `testdata/sessions/`. Exit status is non-zero when a check
+fails, so every command drops straight into a script or CI job.
+
+---
+
+## The AskISO ecosystem
+
+AskISO is a single Go engine for working with ISO 20022 financial messages, served
+through several front ends. It gives you fuzzy search across the whole message
+catalogue, a Bubble Tea TUI, schema and sample viewers, a semantic business-rule
+linter, synthetic message generation, MT ⇄ MX cross-references, and a mock clearing
+rail, without leaving the terminal.
+
+**AskISO does not redistribute ISO 20022 specifications.** The Registration Authority
+publishes them free of charge at [iso20022.org](https://www.iso20022.org/); you download
+what you need and point AskISO at it. That keeps the binary small, keeps your schemas
+current, and means the specification content you validate against comes from the source
+of truth rather than a mirror of unknown age.
+
+> This is not the official ISO 20022 site. The sole source of up-to-date ISO 20022
+> material is <https://www.iso20022.org/>
+
+| Component | Purpose | Use case |
+| :--- | :--- | :--- |
+| `askiso` | CLI and interactive TUI | Search, inspect, lint, validate, convert and generate messages in a terminal |
+| `askiso-mcp` | Model Context Protocol server | Let an AI assistant check the specification instead of recalling it |
+| `askiso-lsp` | Language server for ISO 20022 XML | Diagnostics, hover, completion and outline in an editor |
+| `pkg/iso20022` | Go SDK, the shared core | Embed the same checks in a Go service |
+| [askiso.io](https://askiso.io) | The engine compiled to WebAssembly | Check a message in the browser, nothing sent anywhere |
+| `action.yml` | Composite GitHub Action | Annotate pull requests that introduce non-compliant messages |
+
+### Using AskISO from an AI assistant
+
+`askiso-mcp` serves the same engine over the [Model Context Protocol](https://modelcontextprotocol.io),
+so an assistant can check the specification instead of recalling it. Ten tools:
+search, info, lint, profile check, validate, generate, MT translation, code
+lookup, schema diff, and XML/JSON conversion.
+
+```json
+{
+  "mcpServers": {
+    "askiso": { "command": "askiso-mcp" }
+  }
+}
+```
+
+It speaks newline-delimited JSON-RPC 2.0 on stdin and stdout, writes nothing
+else to stdout, and needs no catalogue for the seven tools that work in light
+mode. `askiso-mcp --tools` lists what it exposes.
+
+### Using AskISO from an editor
+
+`askiso-lsp` is a language server for ISO 20022 XML. It publishes diagnostics as
+you type (business rules, schema validation against your own downloaded XSDs,
+and optional CBPR+ structured-address readiness checks) and adds hover,
+completion and a document outline driven by the schema.
+
+Neovim:
+
+```lua
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'xml',
+  callback = function()
+    vim.lsp.start({ name = 'askiso', cmd = { 'askiso-lsp' }, root_dir = vim.fn.getcwd() })
+  end,
+})
+```
+
+Completion lists the elements the schema allows at the cursor, **in schema
+order**: ISO 20022 content models are ordered sequences, so an alphabetical
+list would suggest invalid documents. Inside an enumerated element it offers the
+code set instead. Without a catalogue it offers nothing rather than guessing.
+The rule profile is set as described under [Configuration](#configuration).
+
+### Go SDK
+
+```go
+import "github.com/sebastienrousseau/askiso/pkg/iso20022"
+
+xml, _ := iso20022.Generate(iso20022.GeneratorOptions{
+    MsgType: "pacs.008",
+    Preset:  "sepa",
+    Amount:  "25000.00",
+})
+
+res, _ := iso20022.Lint([]byte(xml), "transfer.xml")
+fmt.Printf("passed: %d  errors: %d\n", res.Passed, res.Errors)
+
+jsonBytes, _ := iso20022.XMLToJSON([]byte(xml))
+```
+
+`pkg/iso20022` is the shared core. The CLI, the website's WebAssembly build, and any Go
+service that imports it all run the same code.
+
+Everything above works with no catalogue. To read schema text, open one:
+
+```go
+cat, err := iso20022.OpenCatalogue("")     // searches the conventional locations
+info, _ := cat.Lookup("pacs.008.001.10")   // works with a nil *Catalogue too
+
+if !info.Installed {
+    // info.Sets names the message sets that publish it, each with a DownloadURL()
+    for _, s := range info.Sets {
+        fmt.Printf("download %s from %s\n", s, s.DownloadURL())
+    }
+}
+```
+
+The API reports `Installed: false` rather than failing, so callers can always tell the
+user what to download.
+
+### The website
+
+`web/site` is a static page that loads `pkg/iso20022` compiled to WebAssembly, so the
+browser runs byte-for-byte the same logic as the CLI. A message linted on the website
+gets the identical verdict to one linted in a terminal or a CI pipeline.
+
+```bash
+make web         # build the WebAssembly bundle
+make web-test    # 30-check smoke test of the Go/JS bridge (needs node)
+make web-serve   # http://127.0.0.1:8765
+```
+
+The site is light mode only: it carries the embedded index of the standard, never any
+schema content. Anything needing the XSD text links to the official download and points
+at the CLI. The deploy workflow enforces that: it fails if an `.xsd`, `.pdf` or `.docx`
+ever reaches `web/site`.
+
+It publishes to <https://askiso.io> on every push to `main`, and the Go/JS smoke test
+gates the deploy: a renamed API or a field that stopped serialising would otherwise
+break the page silently.
+
+### In continuous integration
+
+The repository ships a composite action, so a pull request that introduces a
+non-compliant message is annotated rather than merged silently:
+
+```yaml
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  iso20022:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+      - uses: sebastienrousseau/askiso@v0.0.6
+        with:
+          path: ./messages
+          profile: cbpr-2026
+```
+
+Findings are uploaded as SARIF, so they appear on the diff. Nothing is
+downloaded from iso20022.org: linting and the rule profiles run from the
+embedded index.
+
+---
+
+## Capabilities at a glance
+
+| Area | Capability | Status |
+| :--- | :--- | :--- |
+| Discovery | Search, info, statistics and the TUI across all 2,845 message definitions in 285 published message sets | Built; search and info need no catalogue |
+| Validation | Pure-Go XSD validation, buffered and streaming, with imported external code sets | Built; agrees with libxml2 on 4,746 of 4,746 catalogue documents; needs a catalogue |
+| Business rules | Semantic linter and scheme rule profiles (`base`, `cbpr-plus`, `cbpr-2026`, `cbpr-2027`, `investigations`, `verification-of-payee`) | Built; embedded, no catalogue |
+| Conversion | MT ⇄ MX for seven MT pairs with a fidelity report; MT n92/n95/n96 to MX one way; XML ⇄ JSON | Built; see [When not to use AskISO](#when-not-to-use-askiso) for what is lossy |
+| Generation | Templates with rail presets for four messages; schema-driven generation for the rest | Built; schema-driven needs a catalogue |
+| Change analysis | Path-level schema diff with breaking-change classification | Built; needs a catalogue |
+| Private CBPR+ | Local rule packs and versioned workspaces from an institution's own MyStandards exports | Built; nothing leaves the machine |
+| Integrations | MCP server, language server, Go SDK, WebAssembly website, GitHub Action with SARIF | Built |
+| Simulation | Lifecycle flows, sequence diagrams and a local mock clearing rail | Built |
+
+---
+
+## Ecosystem comparison
+
+AskISO has not been benchmarked or feature-audited against other ISO 20022 tools, so
+this section makes no claim about them. The one comparison it does make is measured:
+schema validation against libxml2, the reference implementation, across the whole
+catalogue (`make differential`).
+
+| Project | XSD validation | ISO 20022 business rules and scheme profiles | MT ⇄ MX conversion |
+| :--- | :---: | :---: | :---: |
+| **AskISO** | Pure Go; agrees with libxml2 on 4,746 of 4,746 documents | Yes | Seven MT pairs, both ways |
+| `xmllint` (libxml2) | Yes, the reference | No | No |
+
+---
+
+## Benchmarks
+
+No throughput or latency benchmarks are recorded in this repository, so none are
+quoted, and `docs/BENCHMARKS.md` does not exist yet. The only resource figures the
+project states are the memory cost of streaming validation, also listed under
+[Known limitations](#known-limitations):
+
+| Scenario | Result | Environment |
+| :--- | ---: | :--- |
+| Streaming validation of a file of 8 MiB or more | about 120 bytes per transaction | Not recorded |
+| A 39 MB statement, streamed | about 2.4 MB of memory | Not recorded |
+
+---
+
+## Features
+
+### Commands
 
 Commands marked ◆ need a catalogue; the rest work standalone.
 
@@ -195,51 +424,16 @@ Commands marked ◆ need a catalogue; the rest work standalone.
 | `askiso completion <shell>` | Shell completions for zsh, bash, fish, powershell |
 | `askiso version` | Build version and metadata |
 
-### Using AskISO from an AI assistant
+### TUI keys
 
-`askiso-mcp` serves the same engine over the [Model Context Protocol](https://modelcontextprotocol.io),
-so an assistant can check the specification instead of recalling it. Ten tools:
-search, info, lint, profile check, validate, generate, MT translation, code
-lookup, schema diff, and XML/JSON conversion.
+Type any text to filter the catalogue: **every plain letter belongs to the
+filter**, so the shortcuts are modified. `Enter` opens the sample, `ctrl+s` the
+schema, `ctrl+k` checks the message (business rules, schema, and the November
+2026 address rules in one pane), `ctrl+y` copies, `ctrl+a` opens the assistant,
+`?` shows help, `q` quits.
 
-```json
-{
-  "mcpServers": {
-    "askiso": { "command": "askiso-mcp" }
-  }
-}
-```
-
-It speaks newline-delimited JSON-RPC 2.0 on stdin and stdout, writes nothing
-else to stdout, and needs no catalogue for the seven tools that work in light
-mode. `askiso-mcp --tools` lists what it exposes.
-
-### Using AskISO from an editor
-
-`askiso-lsp` is a language server for ISO 20022 XML. It publishes diagnostics as
-you type — business rules, schema validation against your own downloaded XSDs,
-and optional CBPR+ structured-address readiness checks — and adds hover,
-completion and a document outline driven by the schema.
-
-Neovim:
-
-```lua
-vim.api.nvim_create_autocmd('FileType', {
-  pattern = 'xml',
-  callback = function()
-    vim.lsp.start({ name = 'askiso', cmd = { 'askiso-lsp' }, root_dir = vim.fn.getcwd() })
-  end,
-})
-```
-
-Completion lists the elements the schema allows at the cursor, **in schema
-order** — ISO 20022 content models are ordered sequences, so an alphabetical
-list would suggest invalid documents. Inside an enumerated element it offers the
-code set instead. Without a catalogue it offers nothing rather than guessing.
-
-`--profile` selects the rule profile (default `cbpr-2026`); an empty value turns
-scheme rules off. A client can change it at runtime by sending
-`workspace/didChangeConfiguration` with `{"askiso": {"profile": "cbpr-plus"}}`.
+`/catalog` shows what you have installed against the whole published standard,
+with a download link beside anything missing. `/check` is the same as `ctrl+k`.
 
 ### Rule profiles
 
@@ -249,8 +443,8 @@ scheme rules off. A client can change it at runtime by sending
 | `cbpr-plus` | Live SR2025 CBPR+: message/Usage Identifier dispatch, BAH consistency, address and party rules, totals, UETRs, currencies, and pacs.009 variants |
 | `cbpr-2026` | Readiness for the deferred structured-address requirement; no replacement date is asserted |
 | `cbpr-2027` | The 2026 rules plus enhanced data: purpose codes, structured remittance, LEIs, UETRs |
-| `investigations` | camt.110 / camt.111 — every investigation identifies its payment, every response quotes its request |
-| `verification-of-payee` | acmt.023 / acmt.024 — a request says what to check, a failed report says why |
+| `investigations` | camt.110 / camt.111: every investigation identifies its payment, every response quotes its request |
+| `verification-of-payee` | acmt.023 / acmt.024: a request says what to check, a failed report says why |
 | `all` | Every rule AskISO currently implements; use dated profiles to interpret future-rule severity |
 
 Dates that have not arrived produce **warnings**, not errors, so `--profile
@@ -264,7 +458,63 @@ cardinalities, restricted code sets and patterns remain defined by each Swift
 MyStandards Usage Guideline. A base ISO 20022 XSD is not a substitute for a
 CBPR+ Usage Guideline.
 
-#### Bring your own CBPR+ guidelines
+### The deferred structured-address requirement
+
+Swift deferred the planned **14 November 2026** cutover on 27 August 2026 and
+will confirm replacement timing. The requirement remains, and AskISO checks readiness:
+
+```bash
+askiso lint payment.xml --profile cbpr-2026
+```
+
+```text
+  ❌ [CBPR-ADDR-002] the address is fully unstructured (3 address line(s), no structured element)
+     at       /Document/CdtTrfTxInf/Dbtr/PstlAdr
+     expected hybrid or structured
+     fix      Move the town into <TwnNm> and the country into <Ctry>; keep the
+              remainder in at most two <AdrLine> elements.
+
+  ❌ [CBPR-ADDR-003] "France" is not an ISO 3166-1 alpha-2 country code
+     at       /Document/CdtTrfTxInf/Cdtr/PstlAdr/Ctry
+     expected "FR" (the code for France)
+```
+
+The pack enforces town and country presence, the ISO 3166-1 alpha-2 code format, the
+two-line/70-character hybrid limit, and flags hybrid addresses as workable but less
+durable. The exempt message types (`camt.052`, `camt.053`, `camt.054`, `camt.060`,
+`camt.025`, `admi.024`) are skipped and reported as out of scope rather than passing.
+
+This matters because schema validation cannot catch it: ISO 20022 constrains `<Ctry>` to
+`[A-Z]{2,2}` and nothing more, so `XX` validates. AskISO checks against the 249 assigned
+ISO 3166-1 codes.
+
+Available as `--profile cbpr-2026` in the CLI and as the **Nov 2026** tab on the website.
+Neither needs a catalogue: the rules are embedded.
+
+### Validation
+
+`askiso validate` implements the XML Schema subset ISO 20022 uses (element order,
+cardinality, choices, wildcards, patterns, enumerations, length and numeric facets) in
+pure Go.
+
+It is checked against the reference implementation: over the whole catalogue AskISO and
+libxml2 agree on **4,746 of 4,746** documents, accepting the same 1,035 and rejecting the
+same 3,711. `make differential` reproduces that.
+
+Diagnostics say more than the reference does:
+
+```text
+  payment.xml:20:7
+    [pattern]  "EURO" does not match the required format
+    at       /Document/FIToFICstmrCdtTrf/CdtTrfTxInf/IntrBkSttlmAmt/@Ccy
+    expected [A-Z]{3,3}
+    found    EURO
+```
+
+The schema is resolved from the document's own namespace, so the second argument is
+optional. Exit status is 0 when valid, 1 when not, so it drops straight into CI.
+
+### Bring your own CBPR+ guidelines
 
 AskISO does not distribute Swift publications. Users who are authorised to use
 their organisation's MyStandards exports can apply them locally:
@@ -375,12 +625,12 @@ askiso cbpr-pack diff /secure/CBPRPlus-SR2025 /secure/CBPRPlus-SR2026 \
 
 The PDF path requires Poppler's `pdftotext`. AskISO invokes it directly without
 a shell, reads the extracted text in memory, and records source filenames and
-SHA-256 fingerprints—not PDF prose or absolute paths. It does not contact a
+SHA-256 fingerprints, not PDF prose or absolute paths. It does not contact a
 network service or create a cache. A compiled file is written only when the
 user explicitly requests `--output`, with owner-only permissions; the standard
 `*.cbpr-pack.json` name is gitignored by this repository.
 
-“Local only” describes AskISO's behaviour: it does not send, copy into the
+"Local only" describes AskISO's behaviour: it does not send, copy into the
 application, or upload the source artefacts. Filesystem providers remain outside
 AskISO's control; a source folder in iCloud Drive, OneDrive or another synced
 location is still synchronised by that provider according to the user's system
@@ -527,175 +777,150 @@ See Swift's [standards IPR policy](https://www.swift.com/about-us/legal/intellec
 and [MyStandards access options](https://www.swift.com/products/mystandards);
 this project documentation is not legal advice.
 
-### In continuous integration
-
-The repository ships a composite action, so a pull request that introduces a
-non-compliant message is annotated rather than merged silently:
-
-```yaml
-permissions:
-  contents: read
-  security-events: write
-
-jobs:
-  iso20022:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
-      - uses: sebastienrousseau/askiso@v0.0.5
-        with:
-          path: ./messages
-          profile: cbpr-2026
-```
-
-Findings are uploaded as SARIF, so they appear on the diff. Nothing is
-downloaded from iso20022.org: linting and the rule profiles run from the
-embedded index.
-
-### TUI keys
-
-Type any text to filter the catalogue — **every plain letter belongs to the
-filter**, so the shortcuts are modified. `Enter` opens the sample, `ctrl+s` the
-schema, `ctrl+k` checks the message (business rules, schema, and the November
-2026 address rules in one pane), `ctrl+y` copies, `ctrl+a` opens the assistant,
-`?` shows help, `q` quits.
-
-`/catalog` shows what you have installed against the whole published standard,
-with a download link beside anything missing. `/check` is the same as `ctrl+k`.
-
 ---
 
-## The website
+## Configuration
 
-`web/site` is a static page that loads `pkg/iso20022` compiled to WebAssembly, so the
-browser runs byte-for-byte the same logic as the CLI. A message linted on the website
-gets the identical verdict to one linted in a terminal or a CI pipeline.
+### The catalogue
+
+AskISO knows about all **2,845 message definitions across 285 published message sets**
+out of the box: that index is embedded, so `search`, `info`, `code`, `translate`,
+`lint` and `generate` work the moment you install it, with no download and no network.
+That includes converting a real SWIFT MT message: `translate payment.mt103` needs no
+schemas, because the target document is built rather than read.
+
+Commands that read the actual XSD files (`schema`, `sample`, `diff`, `stats`,
+`code --sets`, and full `validate`) need a catalogue. Download the message sets you
+want from the
+[ISO 20022 catalogue of messages](https://www.iso20022.org/iso-20022-message-definitions)
+and import them:
 
 ```bash
-make web         # build the WebAssembly bundle
-make web-test    # 30-check smoke test of the Go/JS bridge (needs node)
-make web-serve   # http://127.0.0.1:8765
+askiso catalog fetch pacs.008        # opens the right page, imports what lands
+askiso code --import ~/Downloads/2Q2026_externalcodesets_v3.json # XLSX or JSON Schema
+askiso catalog add ~/Downloads/PaymentsClearingAndSettlement_v11.zip
+askiso catalog add ~/Downloads/*.zip
+askiso catalog add ~/Downloads --dry-run     # see what would happen first
 ```
 
-The site is light mode only: it carries the embedded index of the standard, never any
-schema content. Anything needing the XSD text links to the official download and points
-at the CLI. The deploy workflow enforces that: it fails if an `.xsd`, `.pdf` or `.docx`
-ever reaches `web/site`.
+`catalog add` unpacks nested archives (the RA ships zips inside zips), sorts every file
+into the right place, and matches the archive against the official set names so
+`PaymentsClearingAndSettlement_v11.zip` and `payments-clearing-and-settlement.zip` both
+land in one canonical directory.
 
-It publishes to <https://askiso.io> on every push to `main`, and the
-Go/JS smoke test gates the deploy — a renamed API or a field that stopped serialising
-would break the page silently otherwise.
+Not sure what you have? `askiso catalog status` compares your install against the full
+published standard; `askiso catalog where` shows every location AskISO searches.
 
----
+The layout it produces, which you can also create by hand:
 
-## Go SDK
-
-```go
-import "github.com/sebastienrousseau/askiso/pkg/iso20022"
-
-xml, _ := iso20022.Generate(iso20022.GeneratorOptions{
-    MsgType: "pacs.008",
-    Preset:  "sepa",
-    Amount:  "25000.00",
-})
-
-res, _ := iso20022.Lint([]byte(xml), "transfer.xml")
-fmt.Printf("passed: %d  errors: %d\n", res.Passed, res.Errors)
-
-jsonBytes, _ := iso20022.XMLToJSON([]byte(xml))
+```text
+<catalogue root>/
+└── Payments Clearing and Settlement/
+    ├── Version 11.0/
+    │   ├── Schemas/                    ← required
+    │   │   ├── pacs.008.001.10.xsd
+    │   │   └── pacs.009.001.10.xsd
+    │   ├── Sample Messages/            ← optional
+    │   └── Message Definition Reports/ ← optional
+    └── Version 12.0/
 ```
 
-`pkg/iso20022` is the shared core. The CLI, the website's WebAssembly build, and any Go
-service that imports it all run the same code.
+AskISO looks for the catalogue in this order:
 
-Everything above works with no catalogue. To read schema text, open one:
+| # | Location |
+| :-- | :--- |
+| 1 | `--catalog <path>` |
+| 2 | `$ASKISO_CATALOG` |
+| 3 | `$XDG_DATA_HOME/askiso/catalog`, when that variable is set |
+| 4 | `~/Library/Application Support/askiso/catalog` (macOS) |
+| 5 | `%LocalAppData%\askiso\catalog` (Windows) |
+| 6 | `~/.local/share/askiso/catalog` |
+| 7 | The working directory and its parents |
 
-```go
-cat, err := iso20022.OpenCatalogue("")     // searches the conventional locations
-info, _ := cat.Lookup("pacs.008.001.10")   // works with a nil *Catalogue too
+`HOME` wins over the operating system's own idea of your home directory wherever it is
+set, which matters on Windows, where it is otherwise ignored entirely.
 
-if !info.Installed {
-    // info.Sets names the message sets that publish it, each with a DownloadURL()
-    for _, s := range info.Sets {
-        fmt.Printf("download %s from %s\n", s, s.DownloadURL())
-    }
-}
-```
-
-The API reports `Installed: false` rather than failing, so callers can always tell the
-user what to download.
-
----
-
-## The deferred structured-address requirement
-
-Swift deferred the planned **14 November 2026** cutover on 27 August 2026 and
-will confirm replacement timing. The requirement remains, and AskISO checks readiness:
+`catalog add` writes to whichever of those already holds a catalogue, so importing more
+message sets extends your existing one rather than quietly starting a second.
 
 ```bash
-askiso lint payment.xml --profile cbpr-2026
+askiso doctor    # confirms what AskISO found, and fails if it found nothing
 ```
 
-```
-  ❌ [CBPR-ADDR-002] the address is fully unstructured (3 address line(s), no structured element)
-     at       /Document/CdtTrfTxInf/Dbtr/PstlAdr
-     expected hybrid or structured
-     fix      Move the town into <TwnNm> and the country into <Ctry>; keep the
-              remainder in at most two <AdrLine> elements.
+If no catalogue is present, commands that need one tell you where AskISO looked and exit
+non-zero. It never reports an empty catalogue as a healthy one.
 
-  ❌ [CBPR-ADDR-003] "France" is not an ISO 3166-1 alpha-2 country code
-     at       /Document/CdtTrfTxInf/Cdtr/PstlAdr/Ctry
-     expected "FR" (the code for France)
-```
+> **Keep the catalogue out of cloud-synced folders.** iCloud Drive, Dropbox and OneDrive
+> evict cold files and leave placeholders behind. AskISO detects iCloud placeholders and
+> refuses to parse them, but the local data directory is the reliable home.
 
-The pack enforces town and country presence, the ISO 3166-1 alpha-2 code format, the
-two-line/70-character hybrid limit, and flags hybrid addresses as workable but less
-durable. The exempt message types — `camt.052`, `camt.053`, `camt.054`, `camt.060`,
-`camt.025`, `admi.024` — are skipped and reported as out of scope rather than passing.
+### Environment variables
 
-This matters because schema validation cannot catch it: ISO 20022 constrains `<Ctry>` to
-`[A-Z]{2,2}` and nothing more, so `XX` validates. AskISO checks against the 249 assigned
-ISO 3166-1 codes.
+| Variable | Effect |
+| :--- | :--- |
+| `ASKISO_CATALOG` | Catalogue location, after `--catalog` (see the search order above) |
+| `XDG_DATA_HOME` | Base of the default catalogue location when set |
+| `HOME` | Home directory used for the default locations, on every platform |
+| `NO_COLOR` | Any value, like `TERM=dumb`, turns off colour and syntax highlighting in `ask`, `schema` and `sample` |
+| `ASKISO_SHOW_LOGO` | `0` hides the logo in the TUI |
+| `OLLAMA_HOST`, `OLLAMA_MODEL` | Local Ollama endpoint for the assistant (default `http://localhost:11434`, model `llama3`) |
+| `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` | OpenAI-compatible provider for the assistant, used when the key is set (default base URL `https://api.openai.com/v1`, model `gpt-4o-mini`) |
 
-Available as `--profile cbpr-2026` in the CLI and as the **Nov 2026** tab on the website.
-Neither needs a catalogue: the rules are embedded.
+`askiso doctor` reports which assistant provider it can reach.
+
+### Language server profile
+
+`askiso-lsp --profile` selects the rule profile (default `cbpr-2026`); an empty
+value turns scheme rules off. A client can change it at runtime by sending
+`workspace/didChangeConfiguration` with `{"askiso": {"profile": "cbpr-plus"}}`.
 
 ---
 
-## Validation
+## Examples
 
-`askiso validate` implements the XML Schema subset ISO 20022 uses — element order,
-cardinality, choices, wildcards, patterns, enumerations, length and numeric facets — in
-pure Go.
+Runnable programs, one per flow, in [`examples/`](examples/README.md). Every one is
+built and exercised by `go test ./examples/...`, so none of them can rot without the
+build noticing. The [documentation examples](https://pkg.go.dev/github.com/sebastienrousseau/askiso/pkg/iso20022#pkg-examples)
+on pkg.go.dev show single calls.
 
-It is checked against the reference implementation: over the whole catalogue AskISO and
-libxml2 agree on **4,746 of 4,746** documents, accepting the same 1,035 and rejecting the
-same 3,711. `make differential` reproduces that.
+| Example | Question it answers | Needs a catalogue |
+| --- | --- | --- |
+| [`remediate`](examples/remediate) | What is wrong with this message, and what do I change? | No |
+| [`cbpr-2026`](examples/cbpr-2026) | Will this still be accepted after 14 November 2026? | No |
+| [`mt-to-mx`](examples/mt-to-mx) | What does this SWIFT MT message look like as ISO 20022, and what was lost? | No |
+| [`lookup`](examples/lookup) | What is this message, and what converts into it? | No |
+| [`ci-sarif`](examples/ci-sarif) | How do I fail a build on bad messages? | No |
+| [`batch-audit`](examples/batch-audit) | Across everything we send, which rule do we fail most? | No |
+| [`validate`](examples/validate) | Is this message valid against its XML Schema? | **Yes** |
 
-Diagnostics say more than the reference does:
-
+```bash
+go run ./examples/remediate  payment.xml
+go run ./examples/mt-to-mx   payment.mt103
+go run ./examples/validate   payment.xml ~/iso20022-catalogue
 ```
-  payment.xml:20:7
-    [pattern]  "EURO" does not match the required format
-    at       /Document/FIToFICstmrCdtTrf/CdtTrfTxInf/IntrBkSttlmAmt/@Ccy
-    expected [A-Z]{3,3}
-    found    EURO
-```
-
-The schema is resolved from the document's own namespace, so the second argument is
-optional. Exit status is 0 when valid, 1 when not, so it drops straight into CI.
 
 ---
 
-## Known limitations
+## When not to use AskISO
+
+**AskISO is a developer tool, not regulatory advice.** It reports what it can verify
+against the schemas and rules it was given. A clean result is not an assurance that a
+scheme, a correspondent or a market infrastructure will accept the message: the
+Registration Authority and your scheme operator remain authoritative on that. Where a
+mapping cannot be verified against a published source, AskISO reports the gap rather
+than guessing.
+
+Do not use it as a substitute for a CBPR+ Usage Guideline, a Swift Readiness Portal
+verdict, or a network acceptance test; it is not affiliated with or certified by Swift.
+
+### Known limitations
 
 Stated plainly, because a validation tool that overstates itself is worse than no tool.
 
 - **`generate` covers every message, two ways.** `pacs.008`, `pacs.009`, `pain.001` and
   `camt.053` come from templates with rail-aware defaults and need no catalogue. Every
   other message is built by walking its schema, which needs one installed. All 4,746
-  installed schemas were generated, validated against themselves, and linted clean —
+  installed schemas were generated, validated against themselves, and linted clean;
   that is asserted by `make conformance`, not claimed. A schema-built message is
   minimal and synthetic: it shows the shape, not a realistic payment.
 - **`translate` covers seven pairs, both ways.** MT101, MT103, MT104, MT107, MT202, MT204
@@ -710,33 +935,33 @@ Stated plainly, because a validation tool that overstates itself is worse than n
   names the source message and the prose becomes the narrative. Converting back is not
   implemented.
 - **The two directions lose different things, and both say so.** MT to MX produces
-  unstructured addresses, which CBPR+ stops accepting once the deferred requirement takes effect. MX to MT loses
-  purpose codes, legal entity identifiers and structured remittance outright, flattens
-  structured addresses into free text, and cuts a 35-character reference to the 16 an MT
-  field allows. A statement entry keeps its amount, dates and references, but MT940 wants
-  a four-character transaction type from its own vocabulary and no verifiable mapping from
-  the ISO 20022 bank transaction code exists — so a structured code becomes `NMSC` and the
-  report names what was lost. A proprietary code already shaped like an MT type is passed
-  through exactly, which is how a statement generated from an MT940 gets its own codes
-  back.
+  unstructured addresses, which CBPR+ stops accepting once the deferred requirement takes
+  effect. MX to MT loses purpose codes, legal entity identifiers and structured remittance
+  outright, flattens structured addresses into free text, and cuts a 35-character
+  reference to the 16 an MT field allows. A statement entry keeps its amount, dates and
+  references, but MT940 wants a four-character transaction type from its own vocabulary
+  and no verifiable mapping from the ISO 20022 bank transaction code exists, so a
+  structured code becomes `NMSC` and the report names what was lost. A proprietary code
+  already shaped like an MT type is passed through exactly, which is how a statement
+  generated from an MT940 gets its own codes back.
 - **Conversion is lossy, by nature and by design.** MT addresses are unstructured, so a
-  converted message will not satisfy the deferred CBPR+ address requirement until the addresses are
-  enriched. Every source field appears in the fidelity report; nothing is dropped
-  silently.
+  converted message will not satisfy the deferred CBPR+ address requirement until the
+  addresses are enriched. Every source field appears in the fidelity report; nothing is
+  dropped silently.
 - **`diff` compares patterns conservatively.** Deciding whether one regular expression
   accepts everything another does is not decidable in general, so any pattern change is
   reported as breaking.
 - **`code` searches three sources.** A curated dictionary of 33 codes that needs nothing
   installed; every code set enumerated in the schemas you downloaded; and the Registration
   Authority's external code set publication once you import it with
-  `askiso code --import <ExternalCodeSets.xlsx-or-json>`. AskISO ships none of the last two —
-  they are your download, stored beside your catalogue.
+  `askiso code --import <ExternalCodeSets.xlsx-or-json>`. AskISO ships none of the last
+  two: they are your download, stored beside your catalogue.
 - **`askiso-lsp` synchronises whole documents**, not incremental edits, and offers no
   code actions or formatting. Completion and hover need an installed catalogue; without
   one they say so rather than guessing.
 - **Streaming validation releases transaction subtrees, not everything.** A file of
   8 MiB or more is validated as it is read, at roughly 120 bytes per transaction rather
-  than the whole document — a 39 MB statement costs about 2.4 MB. The verdict is identical
+  than the whole document: a 39 MB statement costs about 2.4 MB. The verdict is identical
   to the buffered path, asserted against every sample message in the catalogue. Positions
   beyond the last 16,384 lines are reported as byte offsets rather than line numbers.
 - **`catalog fetch` guides a download; it does not perform one.** It finds the right
@@ -750,9 +975,7 @@ Stated plainly, because a validation tool that overstates itself is worse than n
   express that ordering, so `convert` reports it rather than silently reordering the
   document. No message in the catalogue hits this.
 
----
-
-## What is built, and what is next
+### What is built, and what is next
 
 Everything on the original roadmap is built. What follows is what it would take
 next, listed so the gaps are visible rather than implied.
@@ -760,85 +983,97 @@ next, listed so the gaps are visible rather than implied.
 | Next | Why it is not there yet |
 | :--- | :--- |
 | A published bank-transaction-code mapping | MT940 field 61 wants MT's own four-character vocabulary. A mapping exists in scheme documentation; AskISO will carry one when it can be verified against a source, not before |
-| Realistic schema-driven output | A schema walk produces a minimal, synthetic message with plausible identifiers. Making one read like a real trade — consistent parties, matching references across a lifecycle — needs domain data AskISO does not carry |
-
----
-
-## Releases and packages
-
-`v0.0.1` is released, with signed binaries and packages for Linux, macOS and Windows
-attached to it. `go install` builds from source and is the quickest way in:
-
-```bash
-go install github.com/sebastienrousseau/askiso/cmd/askiso@latest
-go install github.com/sebastienrousseau/askiso/cmd/askiso-mcp@latest
-go install github.com/sebastienrousseau/askiso/cmd/askiso-lsp@latest
-```
-
-Homebrew and Scoop carry nothing yet: publishing to a tap writes to a second
-repository, and the token for it is not configured. The cask and the manifest are
-built and attached to each release, so adding that token starts publishing them
-without any other change. Until then, the archives on the release page and
-`go install` are the routes in:
-
-```bash
-# macOS and Linux
-brew install --cask sebastienrousseau/tap/askiso
-
-# Windows
-scoop bucket add sebastienrousseau https://github.com/sebastienrousseau/scoop-bucket
-scoop install askiso
-
-# Debian, Ubuntu, Fedora, RHEL, Alpine, Arch — packages on the release page
-```
-
-Every release archive will carry all three binaries, an SBOM, and a Sigstore
-signature over the checksums. The signing certificate records the workflow and
-the commit that produced the artifact, so it can be verified without trusting a
-key anyone had to store:
-
-```bash
-cosign verify-blob checksums.txt \
-  --signature checksums.txt.sig \
-  --certificate checksums.txt.pem \
-  --certificate-identity-regexp 'https://github.com/sebastienrousseau/askiso/.*' \
-  --certificate-oidc-issuer https://token.actions.githubusercontent.com
-```
+| Realistic schema-driven output | A schema walk produces a minimal, synthetic message with plausible identifiers. Making one read like a real trade (consistent parties, matching references across a lifecycle) needs domain data AskISO does not carry |
 
 ---
 
 ## Development
 
-Building from source needs **Go 1.26.10 or newer**. That is a floor rather than a
-preference: it is the release carrying the standard library fixes for the advisories
-`govulncheck` reports against anything older, one of which
-([GO-2026-6088](https://pkg.go.dev/vuln/GO-2026-6088)) guards `encoding/xml` against
-unbounded decode recursion — directly on the path every `validate`, `lint` and `convert`
-takes through untrusted input.
-
 ```bash
 make build         # build the binary
 make test          # unit tests
 make cover         # tests with a coverage floor
-make ci            # the full gate: fmt, vet, lint, test, cover, vuln, build,
-                   # web-test, mcp-check, lsp-check
+make ci            # the full gate: fmt, vet, lint, no-binaries, readme-check, test,
+                   # cover, vuln, build, sessions, web-test, mcp-check, lsp-check
 make conformance   # generate, convert and validate against your own catalogue
 make differential  # agreement with libxml2 across the whole catalogue
 make fuzz          # fuzz the parsers (FUZZTIME=5m for a longer run)
 make web           # build the WebAssembly bundle for the website
 make web-test      # smoke-test the Go/JS bridge
+make readme-check  # this README against the portfolio template
+make demo          # re-render .github/demo.gif from .github/demo.tape (needs vhs)
 ```
 
-CI runs that same gate on Linux, macOS and Windows on every push, plus `govulncheck`
-and CodeQL. Coverage is enforced at 98% on a runner with no catalogue installed, which
-is a stricter measurement than a developer machine gives you: anything reachable only
-when a catalogue happens to be present does not count towards it.
+CI runs the test suite on Linux, macOS and Windows on every push, plus `govulncheck`,
+gosec and CodeQL. Coverage is enforced at 97.5% on a runner with no catalogue
+installed, which is a stricter measurement than a developer machine gives you: anything
+reachable only when a catalogue happens to be present does not count towards it.
 
 `make conformance` and `make differential` are not run in CI, because CI has no
 catalogue. Run them before tagging a release. Conformance records known defects
 explicitly, so fixing one turns the suite red until the expectation is removed.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+The demo is rendered, never recorded by hand: `.github/demo.tape` runs the binary
+`make demo` builds against `testdata/sessions/`, with no catalogue and no network.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and versioning rules.
+
+---
+
+## Security
+
+Report vulnerabilities privately through a
+[GitHub security advisory](https://github.com/sebastienrousseau/askiso/security/advisories/new),
+never a public issue. [`SECURITY.md`](SECURITY.md) states the response timescales and
+the safe-harbour terms.
+
+- **Local processing.** The CLI runs on your machine, the website is static, and the
+  browser build runs in the tab: there is no AskISO-operated service that receives your
+  messages. Private CBPR+ material is read in place and never uploaded (see
+  [Bring your own CBPR+ guidelines](#bring-your-own-cbpr-guidelines)).
+- **Untrusted input.** The pure-Go XML parser rejects DTD entity references before any
+  external tool is invoked, and `xmllint`, when used, runs with `--nonet`. Native fuzz
+  targets cover the parsers; CI runs a fuzz smoke campaign, race-detector repetitions,
+  `checkptr`, AddressSanitizer and MemorySanitizer on every push.
+- **No bundled specifications.** AskISO reads schemas you obtained from the Registration
+  Authority, so a compromised release cannot substitute altered schemas for yours.
+- **Supply chain.** `govulncheck`, gosec (SARIF to code scanning), CodeQL and dependency
+  review run in CI, and the OpenSSF Scorecard is tracked by the badge above. Releases
+  carry a Sigstore-signed checksum file, an SBOM per archive and SLSA build provenance,
+  and release tags are SSH-signed annotated tags.
+
+---
+
+## Documentation
+
+- **Website and user guide:** <https://askiso.io>, with the [docs](https://askiso.io/docs/)
+  and the [news and release notes](https://askiso.io/news/)
+- **API reference:** [pkg.go.dev](https://pkg.go.dev/github.com/sebastienrousseau/askiso/pkg/iso20022)
+- **Developer docs:** [CONTRIBUTING.md](CONTRIBUTING.md), [Development](#development)
+  and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **Examples:** [examples/README.md](examples/README.md)
+- **Releases:** [GitHub releases](https://github.com/sebastienrousseau/askiso/releases),
+  [CHANGELOG.md](CHANGELOG.md), and the highlights each release page is
+  written from in [docs/releases/](docs/releases/)
+- **Security policy:** [SECURITY.md](SECURITY.md)
+- **Code of conduct:** [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- **Notices:** [NOTICE](NOTICE)
+
+---
+
+## Stability guarantees
+
+- **Versioning.** AskISO is at `0.0.x`. Every release increments by exactly `0.0.1`,
+  and `v0.1.0` follows `v0.0.999`; see [CONTRIBUTING.md](CONTRIBUTING.md). No release
+  so far promises API or output stability: a `0.0.x` release may change
+  `pkg/iso20022`, a command's flags, or what a command prints, and its release notes
+  say what changed.
+- **Rule profiles are dated.** A dated profile reports a requirement whose date has not
+  arrived as a warning, so upgrading AskISO does not fail a build for something not yet
+  required.
+- **Minimum toolchain.** The floor is the `go` directive in `go.mod` (Go 1.26.10 today).
+  So far it has only risen to a Go patch release that fixes standard-library
+  advisories `govulncheck` reported, and each release that raised it named them.
 
 ---
 
@@ -850,4 +1085,4 @@ Dual-licensed at your option:
 - **MIT License** ([LICENSE-MIT](LICENSE-MIT))
 
 ISO 20022 is a registered standard of the International Organization for Standardization.
-AskISO bundles no ISO 20022 specification content — see [NOTICE](NOTICE).
+AskISO bundles no ISO 20022 specification content; see [NOTICE](NOTICE).

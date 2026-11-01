@@ -313,6 +313,8 @@ type SchemaMissingError struct {
 	Sets []MessageSet
 }
 
+// Error names the missing schema and, when the registry knows one, the
+// message set to download and where the Registration Authority hosts it.
 func (e *SchemaMissingError) Error() string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "%s: schema not installed", e.ID)
@@ -322,6 +324,8 @@ func (e *SchemaMissingError) Error() string {
 	return b.String()
 }
 
+// Unwrap returns ErrSchemaNotInstalled, so errors.Is matches every
+// missing-schema error whatever message it names.
 func (e *SchemaMissingError) Unwrap() error { return ErrSchemaNotInstalled }
 
 // DomainCounts reports how many message definitions each business area holds.
