@@ -109,6 +109,18 @@
         navigator.platform || '';
       var apple = /mac|iphone|ipad|ipod/i.test(platform);
       shortcutHint.textContent = apple ? '\u2318K' : 'Ctrl K';
+
+      /* The generator also gives the trigger aria-label="Search", which
+         replaces the button's visible text as its accessible name. With the
+         badge showing, the visible text is "Search Ctrl K", and a name that
+         leaves part of it out fails WCAG 2.5.3 Label in Name: a speech user
+         who says what they see does not match the button. The label is kept
+         rather than removed, because on a phone the text and badge are hidden
+         and the label is the only name the icon has; it now carries the
+         badge too. */
+      if (searchTrigger) {
+        searchTrigger.setAttribute('aria-label', 'Search ' + shortcutHint.textContent);
+      }
     }
 
     /* ---------------- theme toggle ---------------- */
