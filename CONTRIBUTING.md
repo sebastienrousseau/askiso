@@ -20,11 +20,13 @@ All contributors and maintainers must strictly adhere to the project's semantic 
 ## Development Workflow
 
 ### Prerequisites
+
 * Go 1.26.10 or higher - the `go` directive in `go.mod` requires it, because that
   release carries the standard library security fixes AskISO builds against
 * Make
 
 ### Building & Testing
+
 ```bash
 # Build binary
 make build
@@ -43,18 +45,20 @@ go test -v -race ./...
 1. **Formatting**: All Go files must be cleanly formatted using `gofmt -s -w .`.
 2. **Static Analysis**: Code must pass `go vet ./...` with zero warnings.
 3. **SPDX Headers**: Every Go and script file must begin with:
+
    ```go
    // SPDX-FileCopyrightText: 2026 Sebastien Rousseau <sebastian.rousseau@gmail.com>
    // SPDX-License-Identifier: Apache-2.0 OR MIT
    ```
+
 4. **Zero Unchecked Errors**: Always handle or explicitly ignore errors with `_ =`.
 
 ---
 
 ## Pull Request Checklist
 
-- [ ] Code is formatted with `gofmt -s -w .`
-- [ ] `go test -v -race ./...` passes cleanly
-- [ ] `./scripts/ecosystem-scorecard.sh` passes with 100% score (1.00 / 1.00)
-- [ ] Added unit tests for any new features or bug fixes
-- [ ] Updated `README.md` command documentation if CLI surface changed
+* [ ] Code is formatted with `gofmt -s -w .`
+* [ ] `go test -v -race ./...` passes cleanly
+* [ ] `./scripts/ecosystem-scorecard.sh` passes with 100% score (1.00 / 1.00)
+* [ ] Added unit tests for any new features or bug fixes
+* [ ] Updated `README.md` command documentation if CLI surface changed

@@ -2,7 +2,7 @@
 
 ## Versioning
 
-Semantic Versioning 2.0.0 (https://semver.org).
+Semantic Versioning 2.0.0 (<https://semver.org>).
 
 - `MAJOR` — incompatible API or CLI changes
 - `MINOR` — backwards-compatible functionality
