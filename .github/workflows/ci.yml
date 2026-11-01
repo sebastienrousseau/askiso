@@ -71,16 +71,20 @@ jobs:
           version: latest
 
   test:
-    name: Test (${{ matrix.os }}, go${{ matrix.go }})
+    # The job name carries no version on purpose: main's branch protection
+    # requires these checks by name, and a name like go1.26.10 would change
+    # with every toolchain bump and leave PRs waiting on a check that never runs.
+    name: Test (${{ matrix.os }}, go ${{ matrix.go }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        # 1.26.10 is the floor, not a preference: it carries the standard library
-        # fixes that go.mod requires. An older release cannot build the module,
-        # and testing on one would exercise a standard library AskISO does not ship against.
-        go: ['1.26.10']
+        # go.mod's go directive is the floor, not a preference: it carries the
+        # standard library fixes AskISO needs. An older release cannot build the
+        # module, and testing on one would exercise a standard library AskISO
+        # does not ship against.
+        go: [go.mod]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -88,14 +92,14 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: ${{ matrix.go }}
+          go-version-file: go.mod
           cache: true
 
       - name: Test with race detector
         run: go test -race ./...
 
       - name: Measure coverage
-        if: matrix.os == 'ubuntu-latest' && matrix.go == '1.26.10'
+        if: matrix.os == 'ubuntu-latest' && matrix.go == 'go.mod'
         # Race detection and whole-repository instrumentation are deliberately
         # separate. Combining them makes each test binary instrument every
         # package under the race detector, which can exceed Go's test timeout
@@ -194,7 +198,7 @@ jobs:
           esac
 
       - name: Enforce coverage floor
-        if: matrix.os == 'ubuntu-latest' && matrix.go == '1.26.10'
+        if: matrix.os == 'ubuntu-latest' && matrix.go == 'go.mod'
         shell: bash
         run: |
           pct="$(go tool cover -func=coverage.out | tail -1 | grep -oE '[0-9]+\.[0-9]+')"

@@ -28,3 +28,13 @@ updates:
       github-actions:
         patterns:
           - "*"
+  # puppeteer-core and axe-core for the website's browser checks, locked in
+  # package-lock.json and installed with npm ci.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "chore(deps)"
