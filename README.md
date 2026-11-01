@@ -1049,10 +1049,14 @@ the safe-harbour terms.
 - **Website and user guide:** <https://askiso.io>, with the [docs](https://askiso.io/docs/)
   and the [news and release notes](https://askiso.io/news/)
 - **API reference:** [pkg.go.dev](https://pkg.go.dev/github.com/sebastienrousseau/askiso/pkg/iso20022)
-- **Developer docs:** [CONTRIBUTING.md](CONTRIBUTING.md) and [Development](#development)
+- **Developer docs:** [CONTRIBUTING.md](CONTRIBUTING.md), [Development](#development)
+  and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - **Examples:** [examples/README.md](examples/README.md)
-- **Releases:** [GitHub releases](https://github.com/sebastienrousseau/askiso/releases)
+- **Releases:** [GitHub releases](https://github.com/sebastienrousseau/askiso/releases),
+  [CHANGELOG.md](CHANGELOG.md), and the highlights each release page is
+  written from in [docs/releases/](docs/releases/)
 - **Security policy:** [SECURITY.md](SECURITY.md)
+- **Code of conduct:** [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - **Notices:** [NOTICE](NOTICE)
 
 ---
