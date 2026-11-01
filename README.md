@@ -766,8 +766,7 @@ next, listed so the gaps are visible rather than implied.
 
 ## Releases and packages
 
-`v0.0.1` is released, with signed binaries and packages for Linux, macOS and Windows
-attached to it. `go install` builds from source and is the quickest way in:
+Every release attaches signed binaries and packages for Linux, macOS and Windows. `go install` builds from source and is the quickest way in:
 
 ```bash
 go install github.com/sebastienrousseau/askiso/cmd/askiso@latest
@@ -792,17 +791,25 @@ scoop install askiso
 # Debian, Ubuntu, Fedora, RHEL, Alpine, Arch — packages on the release page
 ```
 
-Every release archive will carry all three binaries, an SBOM, and a Sigstore
-signature over the checksums. The signing certificate records the workflow and
+Every release archive carries all three binaries, `askiso` (CLI and TUI),
+`askiso-mcp` (Model Context Protocol server) and `askiso-lsp` (language server),
+with an SBOM per archive and a Sigstore signature over the checksums. AskISO
+redistributes no ISO 20022 specification content. The signing certificate records the workflow and
 the commit that produced the artifact, so it can be verified without trusting a
 key anyone had to store:
 
 ```bash
 cosign verify-blob checksums.txt \
-  --signature checksums.txt.sig \
-  --certificate checksums.txt.pem \
+  --bundle checksums.txt.sigstore.json \
   --certificate-identity-regexp 'https://github.com/sebastienrousseau/askiso/.*' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+The bundle carries both the signature and the certificate. The release workflow
+also records SLSA build provenance for every artifact listed in `checksums.txt`:
+
+```bash
+gh attestation verify askiso_0.0.5_linux_amd64.tar.gz --owner sebastienrousseau
 ```
 
 ---
