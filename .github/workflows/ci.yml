@@ -57,6 +57,15 @@ jobs:
           go mod tidy
           git diff --exit-code go.mod go.sum
 
+      # pkg/iso20022 is the public API, read on pkg.go.dev. `go doc -all`
+      # renders it as pkg.go.dev would, and the test fails on any exported
+      # identifier with no doc comment, which would render as a bare
+      # signature.
+      - name: API docs render and are complete
+        run: |
+          go doc -all ./pkg/iso20022 > /dev/null
+          go test -run TestPublicAPIIsDocumented ./pkg/iso20022
+
       - uses: golangci/golangci-lint-action@4afd733a84b1f43292c63897423277bb7f4313a9 # v8
         with:
           version: latest
