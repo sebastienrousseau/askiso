@@ -107,7 +107,12 @@ def main() -> int:
     digest = base64.b64encode(hashlib.sha256(source.encode("utf-8")).digest()).decode()
     token = f"'sha256-{digest}'"
 
-    tag = re.compile(r'<script src="[^"]*theme-init\.js"></script>')
+    # ssg 0.0.70 fingerprints the script (theme-init.<hash>.js) and adds
+    # integrity and crossorigin attributes; older releases emitted the bare
+    # name with no attributes. Either tag is replaced whole, attributes and all:
+    # the inlined copy is allowed by its CSP hash, not by SRI.
+    tag = re.compile(
+        r'<script src="[^"]*theme-init(?:\.[0-9a-f]+)?\.js"[^>]*></script>')
     inline = f"<script>{source}</script>"
 
     changed = 0
