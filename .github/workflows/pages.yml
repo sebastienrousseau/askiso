@@ -80,10 +80,15 @@ jobs:
       # The content half of the site is built by ssg, which is a Rust binary.
       # Installing it from crates.io is a couple of minutes on a cold cache and
       # near-instant on a warm one, which is why the cargo registry is cached.
-      - uses: dtolnay/rust-toolchain@stable
+      # Pinned by commit like every other action. This action selects the
+      # toolchain from its ref by default, so with a commit pin the toolchain
+      # is named as an input instead.
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
 
       - name: Cache cargo
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry
@@ -106,6 +111,13 @@ jobs:
       # The site is only as trustworthy as the bridge between Go and JavaScript.
       # A renamed API or a field that stops serialising would break the page
       # silently, so the smoke test gates the deploy.
+      # The browser checks run on puppeteer-core and axe-core from the
+      # committed package-lock.json. puppeteer-core 25 needs Node 22.12 or
+      # newer, so the version is set here rather than left to the runner image.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+
       - name: Smoke-test the bundle
         run: node web/wasm/smoke_test.mjs
 
@@ -123,7 +135,7 @@ jobs:
       # sees, and one that shipped once.
       - name: Drive the interactive pages
         run: |
-          npm install --no-save puppeteer-core@23 axe-core@4
+          npm ci
           make web-interact
         env:
           CHROME_PATH: /usr/bin/google-chrome
