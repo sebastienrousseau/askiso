@@ -11,6 +11,8 @@ its pull requests and the SHA-256 of every download.
 
 ## [Unreleased]
 
+## [0.0.6] - 2026-11-01
+
 ### Added
 
 - Release pages in the portfolio layout: `scripts/releasepage` writes each
@@ -19,6 +21,8 @@ its pull requests and the SHA-256 of every download.
   `askiso <version>`.
 - `docs/ARCHITECTURE.md`, this changelog, a code of conduct, and issue and
   pull request templates.
+- An OpenSSF Scorecard workflow, which publishes the score the README badge
+  shows.
 - A Docs Lint workflow: the README is checked against the portfolio
   template and the repository's Markdown against markdownlint.
 - A test that fails on any undocumented identifier in `pkg/iso20022`.
@@ -104,7 +108,8 @@ its pull requests and the SHA-256 of every download.
 - Release binaries for Linux, macOS and Windows with an SBOM per archive and
   a Sigstore-signed checksum file.
 
-[Unreleased]: https://github.com/sebastienrousseau/askiso/compare/v0.0.5...HEAD
+[Unreleased]: https://github.com/sebastienrousseau/askiso/compare/v0.0.6...HEAD
+[0.0.6]: https://github.com/sebastienrousseau/askiso/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/sebastienrousseau/askiso/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/sebastienrousseau/askiso/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/sebastienrousseau/askiso/compare/v0.0.2...v0.0.3

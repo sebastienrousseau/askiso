@@ -124,7 +124,7 @@ The release workflow also records SLSA build provenance for every artifact liste
 `checksums.txt`, which `gh` verifies against this repository:
 
 ```bash
-gh attestation verify askiso_0.0.5_linux_amd64.tar.gz --owner sebastienrousseau
+gh attestation verify askiso_0.0.6_linux_amd64.tar.gz --owner sebastienrousseau
 ```
 
 ### Without installing anything
@@ -322,7 +322,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
-      - uses: sebastienrousseau/askiso@v0.0.5
+      - uses: sebastienrousseau/askiso@v0.0.6
         with:
           path: ./messages
           profile: cbpr-2026
