@@ -404,7 +404,7 @@ web-interact: web
 	 fi; \
 	 node -e "import('puppeteer-core')" >/dev/null 2>&1 || { \
 	   echo "web-interact: puppeteer-core is not installed, skipping"; \
-	   echo "  install it with: npm install --no-save puppeteer-core"; exit 0; \
+	   echo "  install it with: npm ci"; exit 0; \
 	 }; \
 	 (cd $(WEB_OUT) && python3 -m http.server 8899 >/dev/null 2>&1 & echo $$! > /tmp/askiso-interact.pid); \
 	 sleep 2; \
@@ -427,7 +427,7 @@ a11y-axe: web
 	   echo "a11y-axe: puppeteer-core is not installed, skipping"; exit 0; }; \
 	 test -f node_modules/axe-core/axe.min.js || { \
 	   echo "a11y-axe: axe-core is not installed, skipping"; \
-	   echo "  install both with: npm install --no-save puppeteer-core axe-core"; exit 0; }; \
+	   echo "  install both with: npm ci"; exit 0; }; \
 	 (cd $(WEB_OUT) && python3 -m http.server 8899 >/dev/null 2>&1 & echo $$! > /tmp/askiso-axe.pid); \
 	 sleep 2; \
 	 CHROME_PATH="$$chrome" ASKISO_BASE_URL=http://127.0.0.1:8899 node web/tests/a11y.mjs; \

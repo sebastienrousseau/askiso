@@ -37,7 +37,6 @@ web/public/
 *.log
 scratch/
 node_modules/
-package-lock.json
 
 # Generated: one page per message definition (make web)
 web/content/messages/

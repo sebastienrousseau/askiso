@@ -38,6 +38,16 @@ its pull requests and the SHA-256 of every download.
 
 - The README's release verification command used `.sig` and `.pem` files
   that releases no longer ship; it now verifies the Sigstore bundle.
+- Every action in the Website workflow is pinned by commit, and the browser
+  checks install puppeteer-core and axe-core with `npm ci` from a committed
+  lockfile, which clears the three Pinned-Dependencies findings Scorecard
+  raised on its first run.
+
+### Security
+
+- puppeteer-core 25.16.0 for the browser checks. The 23.x line pulled in
+  basic-ftp, extract-zip and zod versions with published high-severity
+  advisories.
 
 ## [0.0.5] - 2026-11-01
 

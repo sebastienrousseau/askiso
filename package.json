@@ -1,0 +1,10 @@
+{
+  "name": "askiso-web-tests",
+  "private": true,
+  "description": "Browser checks for askiso.io: puppeteer-core drives Chrome and axe-core audits WCAG 2.2 AA. Installed with npm ci from the committed lockfile.",
+  "license": "Apache-2.0 OR MIT",
+  "devDependencies": {
+    "axe-core": "4.14.0",
+    "puppeteer-core": "25.16.0"
+  }
+}
