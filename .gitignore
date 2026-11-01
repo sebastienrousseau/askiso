@@ -41,3 +41,6 @@ package-lock.json
 
 # Generated: one page per message definition (make web)
 web/content/messages/
+
+# Scratch binary directory for `make demo`, removed when the target finishes.
+/.demo-bin/

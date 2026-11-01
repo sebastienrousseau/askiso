@@ -25,7 +25,7 @@ COVERAGE_FLOOR = 97.5
 GOVULNCHECK_VERSION ?= v1.7.0
 GOSEC_VERSION ?= v2.22.8
 
-.PHONY: all build install test race property checkptr asan msan reliability cover conformance cbpr-local-conformance cbpr-strict-conformance differential fuzz ci fmt vet lint no-binaries readability a11y seo vuln clean run catalog-info web web-test web-interact a11y-axe banner-contrast reflow terminal-swap sitemap-check focus-order web-console web-serve wasm sessions sessions-record links mcp lsp mcp-check lsp-check servers
+.PHONY: all build install test race property checkptr asan msan reliability cover conformance cbpr-local-conformance cbpr-strict-conformance differential fuzz ci fmt vet lint no-binaries readability a11y seo vuln clean run catalog-info web web-test web-interact a11y-axe banner-contrast reflow terminal-swap sitemap-check focus-order web-console web-serve wasm sessions sessions-record links mcp lsp mcp-check lsp-check servers readme-check demo
 
 all: build
 
@@ -550,7 +550,22 @@ vuln:
 	govulncheck ./...
 
 # The full gate CI runs, minus the catalogue-dependent conformance suite.
-ci: fmt vet lint no-binaries test cover vuln build sessions web-test mcp-check lsp-check
+ci: fmt vet lint no-binaries readme-check test cover vuln build sessions web-test mcp-check lsp-check
+
+# The README follows ~/Code/README-TEMPLATE.md: headings, badge row and demo
+# block. The script says exactly what drifted.
+readme-check:
+	bash scripts/readme-check.sh
+
+# Render the README demo from .github/demo.tape with VHS. The tape runs the
+# binary built here, never one already on PATH, so the GIF shows this tree.
+DEMO_BIN ?= $(CURDIR)/.demo-bin
+demo:
+	@command -v vhs >/dev/null || { echo "vhs is required: https://github.com/charmbracelet/vhs"; exit 1; }
+	mkdir -p $(DEMO_BIN)
+	go build -ldflags "$(LDFLAGS)" -o $(DEMO_BIN)/$(BINARY_NAME) $(CMD_PATH)
+	DEMO_BIN=$(DEMO_BIN) vhs .github/demo.tape
+	rm -rf $(DEMO_BIN)
 
 catalog-info:
 	@./$(BINARY_NAME) doctor || true
