@@ -69,22 +69,33 @@ func exportedReceiver(d *ast.FuncDecl) bool {
 // undocumentedSpecs lists the exported types, constants and variables in a
 // declaration that have no comment of their own or on their group.
 func undocumentedSpecs(d *ast.GenDecl) []string {
+	if d.Doc != nil {
+		return nil
+	}
 	var names []string
 	for _, s := range d.Specs {
 		switch s := s.(type) {
 		case *ast.TypeSpec:
-			if s.Name.IsExported() && d.Doc == nil && s.Doc == nil {
+			if s.Name.IsExported() && s.Doc == nil {
 				names = append(names, s.Name.Name)
 			}
 		case *ast.ValueSpec:
-			if d.Doc != nil || s.Doc != nil || s.Comment != nil {
-				continue
-			}
-			for _, n := range s.Names {
-				if n.IsExported() {
-					names = append(names, n.Name)
-				}
-			}
+			names = append(names, undocumentedValues(s)...)
+		}
+	}
+	return names
+}
+
+// undocumentedValues lists the exported names in a constant or variable
+// spec that has no comment.
+func undocumentedValues(s *ast.ValueSpec) []string {
+	if s.Doc != nil || s.Comment != nil {
+		return nil
+	}
+	var names []string
+	for _, n := range s.Names {
+		if n.IsExported() {
+			names = append(names, n.Name)
 		}
 	}
 	return names
