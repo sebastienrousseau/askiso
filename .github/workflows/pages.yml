@@ -88,10 +88,10 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/bin
-          key: cargo-ssg-${{ runner.os }}-0.0.70
+          key: cargo-ssg-${{ runner.os }}-0.0.71
 
       - name: Install ssg
-        run: command -v ssg || cargo install ssg --version 0.0.70 --locked
+        run: command -v ssg || cargo install ssg --version 0.0.71 --locked
 
       # The terminal sessions on the site are replayed against the binary
       # before it is published. A reworded diagnostic or a renamed flag should
