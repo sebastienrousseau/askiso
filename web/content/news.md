@@ -40,13 +40,14 @@ told by email when something changes that affects the messages you send.
 
 ## v0.0.6 - 1 November 2026
 
-The release notes update. Every release page on GitHub now has the same
-shape: its name and version, what changed and why, the pull requests that
-changed it, and a checksum for every download. The command in the README for
-checking a download against its signature works again, since it had named
-files that releases no longer ship. The README has a new layout shared with
-our other projects, with a short demo, a changelog and a guide to how the code
-fits together. The site now builds with ssg 0.0.71.
+The release notes update. Every release page on GitHub now follows one
+consistent structure: its name and version, the highlights explaining what
+changed and why, the pull requests responsible, and a published checksum for
+every download. The verification command in the README works again, because it
+previously referred to signature files that releases had stopped publishing.
+The README itself follows a layout shared across our projects, alongside a
+short demonstration, a changelog and an architecture guide describing how the
+components fit together. The site is now generated with ssg 0.0.71.
 [Read the v0.0.6 release notes and download it](https://github.com/sebastienrousseau/askiso/releases/tag/v0.0.6).
 
 ## v0.0.5 - 1 November 2026
