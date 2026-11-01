@@ -30,6 +30,7 @@ its pull requests and the SHA-256 of every download.
 
 ### Changed
 
+- CI's test jobs take their Go version from go.mod and are named `Test (<os>, go go.mod)`, so the checks that branch protection requires keep their names across toolchain bumps.
 - The README follows the portfolio template, with a rendered demo.
 - The website builds with ssg 0.0.71.
 - `SECURITY.md` names the latest 0.0.x release as the supported version.
