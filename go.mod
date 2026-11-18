@@ -11,7 +11,7 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.1-0.20250404203927-76690c660834
 	github.com/spf13/cobra v1.10.2
 	go.uber.org/goleak v1.3.0
-	golang.org/x/sys v0.49.0
+	golang.org/x/sys v0.50.0
 	golang.org/x/term v0.47.0
 	golang.org/x/text v0.43.0
 	pgregory.net/rapid v1.3.0
