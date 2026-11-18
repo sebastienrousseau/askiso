@@ -11,10 +11,21 @@ its pull requests and the SHA-256 of every download.
 
 ## [Unreleased]
 
-## [0.0.6] - 2026-11-01
+## [0.0.6] - 2026-11-18
 
 ### Added
 
+- `pkg/iso20022/ffi` (`askiso-abi/v1` JSON envelope dispatcher) and
+  `cmd/askiso-cabi` (`-buildmode=c-shared` shared library entrypoint) for
+  polyglot SDKs.
+- `internal/server` and `cmd/askiso-server` stateless HTTP validation/linting
+  daemon, shipped in `.goreleaser.yaml` archives.
+- `internal/remediate` deterministic offline `<AdrLine>` remediator and
+  `askiso audit` (`--format text|json|html`) SR2027 readiness scorecard.
+- `SetLogger(*slog.Logger)` on `internal/lsp` and `internal/mcp`, and
+  `(*ExternalSets).IsStale` in `internal/codes`.
+- `docs/ABI.md`, `docs/BENCHMARKS.md`, `docs/COMPARISON.md`,
+  `docs/COMPLIANCE.md`, and `docs/SECURITY.md`.
 - Release pages in the portfolio layout: `scripts/releasepage` writes each
   release's page from `docs/releases/<tag>.md`, GitHub's pull-request notes
   and the SHA-256 of every asset, and the release is titled
@@ -30,6 +41,10 @@ its pull requests and the SHA-256 of every download.
 
 ### Changed
 
+- `internal/validator/stream.go` reuses 64 KiB `bufio.Reader` buffers via
+  `sync.Pool`; `internal/cbprworkspace` shards locks per workspace path;
+  `internal/lsp` bounds and `os.Stat`-validates its XSD cache;
+  `internal/ai.NormalizeQuery` avoids double regex matching.
 - CI's test jobs take their Go version from go.mod and are named `Test (<os>, go go.mod)`, so the checks that branch protection requires keep their names across toolchain bumps.
 - The README follows the portfolio template, with a rendered demo.
 - The website builds with ssg 0.0.71.
@@ -46,6 +61,8 @@ its pull requests and the SHA-256 of every download.
 
 ### Security
 
+- Go 1.26.11 floor and workflow pins (resolving `GO-2026-6859` in `net/http`)
+  and `golang.org/x/sys` `0.50.0`.
 - puppeteer-core 25.16.0 for the browser checks. The 23.x line pulled in
   basic-ftp, extract-zip and zod versions with published high-severity
   advisories.
