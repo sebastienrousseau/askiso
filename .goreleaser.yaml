@@ -60,15 +60,30 @@ builds:
     ldflags:
       - -s -w -X main.version={{ .Version }}
 
-# One archive carrying all three binaries: the CLI, the MCP server and the
-# language server are one tool with three front ends, and shipping them apart
-# would leave someone with a client pointing at a binary they do not have.
+  - id: askiso-server
+    main: ./cmd/askiso-server
+    binary: askiso-server
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+
+# One archive carrying all four binaries: the CLI, the MCP server, the language
+# server, and the HTTP daemon are one tool with four front ends.
 archives:
   - id: askiso
     ids:
       - askiso
       - askiso-mcp
       - askiso-lsp
+      - askiso-server
     formats: [tar.gz]
     name_template: >-
       {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
