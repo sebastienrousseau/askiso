@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"sort"
 	"strings"
@@ -49,6 +50,7 @@ type Server struct {
 
 	conn   *conn
 	errOut io.Writer
+	logger *slog.Logger
 
 	mu   sync.RWMutex
 	docs map[string]*Document
@@ -91,6 +93,13 @@ func (s *Server) SetVersion(v string) {
 		defer s.mu.Unlock()
 		s.Version = v
 	}
+}
+
+// SetLogger attaches an optional structured logger for server diagnostics.
+func (s *Server) SetLogger(l *slog.Logger) {
+	s.mu.Lock()
+	s.logger = l
+	s.mu.Unlock()
 }
 
 // SetCatalogue replaces how the server reaches the user's installed schemas.
@@ -438,7 +447,14 @@ func (s *Server) document(uri string) (*Document, bool) {
 func (s *Server) logf(format string, args ...any) {
 	// A failure to log is not worth propagating: the stream it would report on
 	// is the one that just failed.
-	_, _ = fmt.Fprintf(s.errOut, "askiso-lsp: "+format+"\n", args...)
+	msg := fmt.Sprintf(format, args...)
+	s.mu.RLock()
+	logger := s.logger
+	s.mu.RUnlock()
+	if logger != nil {
+		logger.Warn(msg)
+	}
+	_, _ = fmt.Fprintf(s.errOut, "askiso-lsp: %s\n", msg)
 }
 
 // ---------------------------------------------------------------------------

@@ -164,8 +164,9 @@ var writeWorkspacePointer = func(path string, pointer *workspacePointer) error {
 // ListGenerations inventories locally retained snapshots without exposing any
 // proprietary source content.
 func ListGenerations(workspace string) ([]Generation, error) {
-	workspaceStateMu.RLock()
-	defer workspaceStateMu.RUnlock()
+	mu := workspaceLock(workspace)
+	mu.RLock()
+	defer mu.RUnlock()
 	root, err := realWorkspaceRoot(workspace)
 	if err != nil {
 		return nil, err
@@ -232,8 +233,9 @@ func ListGenerations(workspace string) ([]Generation, error) {
 // ActivateGeneration validates and atomically selects a retained snapshot.
 // This is a local rollback primitive; it never reads the entitled source tree.
 func ActivateGeneration(workspace, fingerprint string) (*Manifest, error) {
-	workspaceStateMu.Lock()
-	defer workspaceStateMu.Unlock()
+	mu := workspaceLock(workspace)
+	mu.Lock()
+	defer mu.Unlock()
 	root, err := realWorkspaceRoot(workspace)
 	if err != nil {
 		return nil, err

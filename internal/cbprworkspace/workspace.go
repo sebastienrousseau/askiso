@@ -49,10 +49,19 @@ var (
 	usageIdentifierRE  = regexp.MustCompile(`(?i)swift\.cbprplus(?:\.[a-z0-9]+)+`)
 )
 
-// workspaceStateMu makes the individually atomic generated files one logical
-// snapshot for callers in this process. The manifest is published last, while
-// readers hold a shared lock across every file it pins.
-var workspaceStateMu sync.RWMutex
+// workspaceLocks provides per-workspace RWMutexes so operations on distinct
+// workspaces do not contend on a single process-global lock, while keeping
+// individually atomic generated files one logical snapshot per workspace.
+var workspaceLocks sync.Map
+
+func workspaceLock(workspace string) *sync.RWMutex {
+	key := filepath.Clean(workspace)
+	if resolved, err := realWorkspaceRoot(workspace); err == nil {
+		key = resolved
+	}
+	mu, _ := workspaceLocks.LoadOrStore(key, &sync.RWMutex{})
+	return mu.(*sync.RWMutex)
+}
 
 var (
 	discoverSource      = discover
@@ -244,8 +253,9 @@ func Import(opt Options) (*Manifest, error) {
 	if err != nil {
 		return nil, err
 	}
-	workspaceStateMu.Lock()
-	defer workspaceStateMu.Unlock()
+	mu := workspaceLock(workspace)
+	mu.Lock()
+	defer mu.Unlock()
 	if err := os.MkdirAll(workspace, 0o700); err != nil {
 		return nil, fmt.Errorf("creating private CBPR+ workspace: %w", err)
 	}
@@ -1041,8 +1051,9 @@ func refuseSymlinkedSample(path string) error {
 
 // LoadManifest loads and verifies the shape and fingerprint of a workspace.
 func LoadManifest(workspace string) (*Manifest, error) {
-	workspaceStateMu.RLock()
-	defer workspaceStateMu.RUnlock()
+	mu := workspaceLock(workspace)
+	mu.RLock()
+	defer mu.RUnlock()
 	return loadManifest(workspace)
 }
 
@@ -1087,8 +1098,9 @@ func manifestDataRoot(manifest *Manifest, workspace string) string {
 // manifest. It rejects missing, substituted, or internally inconsistent pack
 // and external-code data before a lint or batch run can use them.
 func LoadRuntime(workspace string) (*Runtime, error) {
-	workspaceStateMu.RLock()
-	defer workspaceStateMu.RUnlock()
+	mu := workspaceLock(workspace)
+	mu.RLock()
+	defer mu.RUnlock()
 	root, err := activeWorkspaceRoot(workspace)
 	if err != nil {
 		return nil, err
@@ -1180,8 +1192,9 @@ func safeWorkspaceFile(root, relative string) (string, error) {
 // Verify checks every pinned local sample without uploading it or persisting
 // message content in the report.
 func Verify(source, workspace string) (*Verification, error) {
-	workspaceStateMu.RLock()
-	defer workspaceStateMu.RUnlock()
+	mu := workspaceLock(workspace)
+	mu.RLock()
+	defer mu.RUnlock()
 	workspaceRoot, err := activeWorkspaceRoot(workspace)
 	if err != nil {
 		return nil, err
