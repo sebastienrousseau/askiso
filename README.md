@@ -21,7 +21,7 @@ row and demo block.
   <a href="https://pkg.go.dev/github.com/sebastienrousseau/askiso/pkg/iso20022"><img src="https://img.shields.io/badge/docs-pkg.go.dev-007d9c?style=for-the-badge&labelColor=555555&logo=go" alt="Docs" height="28" /></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/sebastienrousseau/askiso"><img src="https://img.shields.io/ossf-scorecard/github.com/sebastienrousseau/askiso?style=for-the-badge&label=OpenSSF%20Scorecard&logo=openssf" alt="OpenSSF Scorecard" height="28" /></a>
   <a href="LICENSE-APACHE"><img src="https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue.svg?style=for-the-badge" alt="License: Apache-2.0 OR MIT" height="28" /></a>
-  <a href="go.mod"><img src="https://img.shields.io/badge/go-1.26.10%2B-93450a.svg?style=for-the-badge&logo=go" alt="Go 1.26.10+" height="28" /></a>
+  <a href="go.mod"><img src="https://img.shields.io/badge/go-1.26.11%2B-93450a.svg?style=for-the-badge&logo=go" alt="Go 1.26.11+" height="28" /></a>
 </p>
 
 <p align="center">
@@ -142,7 +142,7 @@ Or run the identical bundle locally with `make web-serve`.
 
 ## Requirements
 
-- **Go 1.26.10 or newer** to build from source or `go install`. That is a floor
+- **Go 1.26.11 or newer** to build from source or `go install`. That is a floor
   rather than a preference: it is the release carrying the standard library fixes
   for the advisories `govulncheck` reports against anything older, one of which
   ([GO-2026-6088](https://pkg.go.dev/vuln/GO-2026-6088)) guards `encoding/xml`
@@ -1071,7 +1071,7 @@ the safe-harbour terms.
 - **Rule profiles are dated.** A dated profile reports a requirement whose date has not
   arrived as a warning, so upgrading AskISO does not fail a build for something not yet
   required.
-- **Minimum toolchain.** The floor is the `go` directive in `go.mod` (Go 1.26.10 today).
+- **Minimum toolchain.** The floor is the `go` directive in `go.mod` (Go 1.26.11 today).
   So far it has only risen to a Go patch release that fixes standard-library
   advisories `govulncheck` reported, and each release that raised it named them.
 

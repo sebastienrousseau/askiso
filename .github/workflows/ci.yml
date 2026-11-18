@@ -23,7 +23,7 @@ env:
   # Keep in step with the `go` directive in go.mod, patch release included.
   # GOTOOLCHAIN is local, so a bare '1.26' resolves to whatever patch the runner
   # image happens to ship and cannot satisfy a go.mod requiring a newer one.
-  GO_VERSION: '1.26.10'
+  GO_VERSION: '1.26.11'
   COVERAGE_FLOOR: '97.5'
 
 jobs:
@@ -278,7 +278,7 @@ jobs:
           go install github.com/securego/gosec/v2/cmd/gosec@v2.22.8
           gosec -fmt sarif -out gosec.sarif ./...
       - uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v3
-        if: always()
+        if: ${{ !cancelled() && hashFiles('gosec.sarif') != '' }}
         with:
           sarif_file: gosec.sarif
 
