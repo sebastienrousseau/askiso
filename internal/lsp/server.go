@@ -20,13 +20,23 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/sebastienrousseau/askiso/internal/xsd"
 	"github.com/sebastienrousseau/askiso/pkg/iso20022"
 )
+
+const maxCachedSchemas = 64
+
+type cachedSchema struct {
+	schema  *xsd.Schema
+	modTime time.Time
+	size    int64
+}
 
 // Server is a language server for ISO 20022 XML documents.
 type Server struct {
@@ -44,7 +54,7 @@ type Server struct {
 	docs map[string]*Document
 	// schemas caches parsed XSDs by path; editor changes should validate the
 	// document again, not reparse the same catalogue file on every keystroke.
-	schemas map[string]*xsd.Schema
+	schemas map[string]cachedSchema
 
 	// catalogue opens the user's installed schemas. Absent one, the server
 	// still lints and still applies rule profiles.
@@ -69,7 +79,7 @@ func New(in io.Reader, out, errOut io.Writer) *Server {
 		conn:      newConn(in, out),
 		errOut:    errOut,
 		docs:      map[string]*Document{},
-		schemas:   map[string]*xsd.Schema{},
+		schemas:   map[string]cachedSchema{},
 		catalogue: openInstalledCatalogue(),
 	}
 }
@@ -453,11 +463,12 @@ func (s *Server) schemaFor(doc *Document) (*xsd.Schema, string, bool) {
 	if err != nil {
 		return nil, msgID, false
 	}
+	info, statErr := os.Stat(path)
 	s.mu.RLock()
-	cached := s.schemas[path]
+	cached, ok := s.schemas[path]
 	s.mu.RUnlock()
-	if cached != nil {
-		return cached, msgID, true
+	if ok && cached.schema != nil && statErr == nil && cached.modTime.Equal(info.ModTime()) && cached.size == info.Size() {
+		return cached.schema, msgID, true
 	}
 	schema, err := xsd.ParseFile(path)
 	if err != nil {
@@ -465,7 +476,16 @@ func (s *Server) schemaFor(doc *Document) (*xsd.Schema, string, bool) {
 		return nil, msgID, false
 	}
 	s.mu.Lock()
-	s.schemas[path] = schema
+	if len(s.schemas) >= maxCachedSchemas {
+		clear(s.schemas)
+	}
+	var entry cachedSchema
+	entry.schema = schema
+	if statErr == nil {
+		entry.modTime = info.ModTime()
+		entry.size = info.Size()
+	}
+	s.schemas[path] = entry
 	s.mu.Unlock()
 	return schema, msgID, true
 }

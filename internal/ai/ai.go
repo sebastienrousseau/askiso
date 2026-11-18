@@ -69,19 +69,26 @@ var (
 
 // NormalizeQuery extracts any ISO 20022 message codes and standardizes them.
 func NormalizeQuery(input string) string {
-	cleaned := msgCodeRegex.ReplaceAllStringFunc(input, func(m string) string {
-		match := msgCodeRegex.FindStringSubmatch(m)
-		if len(match) >= 3 {
-			prefix := strings.ToLower(match[1])
-			num := match[2]
-			if len(match) >= 5 && match[3] != "" && match[4] != "" {
-				return fmt.Sprintf("%s.%s.%s.%s", prefix, num, match[3], match[4])
-			}
-			return fmt.Sprintf("%s.%s", prefix, num)
+	indices := msgCodeRegex.FindAllStringSubmatchIndex(input, -1)
+	if len(indices) == 0 {
+		return input
+	}
+	var b strings.Builder
+	b.Grow(len(input))
+	last := 0
+	for _, loc := range indices {
+		b.WriteString(input[last:loc[0]])
+		prefix := strings.ToLower(input[loc[2]:loc[3]])
+		num := input[loc[4]:loc[5]]
+		if loc[6] >= 0 && loc[8] >= 0 {
+			fmt.Fprintf(&b, "%s.%s.%s.%s", prefix, num, input[loc[6]:loc[7]], input[loc[8]:loc[9]])
+		} else {
+			fmt.Fprintf(&b, "%s.%s", prefix, num)
 		}
-		return m
-	})
-	return cleaned
+		last = loc[1]
+	}
+	b.WriteString(input[last:])
+	return b.String()
 }
 
 // Query processes a natural language prompt and returns an answer.
