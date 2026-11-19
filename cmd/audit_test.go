@@ -50,5 +50,31 @@ func TestAuditCommand(t *testing.T) {
 	if err := RootCmd.Execute(); err == nil {
 		t.Fatal("expected error for invalid format")
 	}
+
+	// High-risk (<50%) and low-risk (>=90%) and empty-dir cases.
+	highDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(highDir, "u.xml"), []byte(unstructuredXML), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if card, err := runAudit([]string{highDir}); err != nil || card.RiskLevel != "high" {
+		t.Fatalf("highDir = (%+v, %v)", card, err)
+	}
+
+	lowDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(lowDir, "s.xml"), []byte(structuredXML), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if card, err := runAudit([]string{lowDir}); err != nil || card.RiskLevel != "low" {
+		t.Fatalf("lowDir = (%+v, %v)", card, err)
+	}
+
+	emptyDir := t.TempDir()
+	if card, err := runAudit([]string{emptyDir}); err != nil || card.ReadinessPercent != 100 || card.RiskLevel != "low" {
+		t.Fatalf("emptyDir = (%+v, %v)", card, err)
+	}
+
+	if _, err := runAudit([]string{filepath.Join(dir, "does-not-exist")}); err == nil {
+		t.Fatal("expected error for missing path")
+	}
 	RootCmd.SetOut(nil)
 }

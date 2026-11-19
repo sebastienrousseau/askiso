@@ -85,4 +85,14 @@ func TestServerEndpoints(t *testing.T) {
 	if err := srv.Shutdown(ctx); err != nil {
 		t.Fatalf("Shutdown: %v", err)
 	}
+
+	// Default config + invalid ListenAndServe address.
+	defSrv := New(Config{Addr: "127.0.0.1:-1"})
+	if err := defSrv.ListenAndServe(); err == nil {
+		t.Fatal("expected error for invalid listen addr")
+	}
+	emptySrv := New(Config{})
+	if emptySrv.cfg.Addr != "127.0.0.1:8080" {
+		t.Fatalf("default addr = %q", emptySrv.cfg.Addr)
+	}
 }

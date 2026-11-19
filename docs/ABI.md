@@ -1,6 +1,7 @@
 # AskISO FFI & C-ABI Contract (`askiso-abi/v1`)
 
 `pkg/iso20022/ffi` provides a deterministic JSON-in / JSON-out dispatch layer shared by:
+
 - **C-ABI (`cmd/askiso-cabi`)** built via `go build -buildmode=c-shared` for Python (`askiso-py`), Java (`askiso-java`), and Rust SDKs.
 - **WASM** builds for TypeScript/Node/Browser (`askiso-ts` / `@askiso/wasm`).
 - **HTTP Daemon (`cmd/askiso-server`)** (`POST /v1/dispatch`).

@@ -27,4 +27,8 @@ func TestRunFlags(t *testing.T) {
 	if code := run([]string{"-unknown-flag"}, &out, &errOut); code != 2 {
 		t.Fatalf("unknown flag exit = %d, want 2", code)
 	}
+
+	if code := run([]string{"-addr", "127.0.0.1:-1"}, &out, &errOut); code != 1 {
+		t.Fatalf("invalid addr exit = %d, want 1", code)
+	}
 }
