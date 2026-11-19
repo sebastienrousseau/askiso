@@ -17,8 +17,9 @@ func PruneGenerations(workspace string, keep int, confirm bool) (int, error) {
 	if keep < 1 {
 		return 0, errors.New("generation retention must be at least 1")
 	}
-	workspaceStateMu.Lock()
-	defer workspaceStateMu.Unlock()
+	mu := workspaceLock(workspace)
+	mu.Lock()
+	defer mu.Unlock()
 	root, err := realWorkspaceRoot(workspace)
 	if err != nil {
 		return 0, err

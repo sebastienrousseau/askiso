@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sebastienrousseau/askiso/internal/codes"
 )
@@ -709,5 +710,35 @@ func TestLoadReportsAnUnreadableFile(t *testing.T) {
 	// failing a lookup that never needed it.
 	if got := codes.ExternalSetsFor(root); got != nil {
 		t.Errorf("ExternalSetsFor returned %v", got)
+	}
+}
+
+func TestExternalSetsIsStale(t *testing.T) {
+	now := time.Date(2026, 11, 18, 0, 0, 0, 0, time.UTC)
+	maxAge := 180 * 24 * time.Hour
+
+	var nilSets *codes.ExternalSets
+	if stale, age := nilSets.IsStale(maxAge, now); stale || age != 0 {
+		t.Errorf("nil IsStale = (%v, %v), want (false, 0)", stale, age)
+	}
+
+	sets := &codes.ExternalSets{Publication: "1Q2026"}
+	if stale, age := sets.IsStale(0, now); stale || age != 0 {
+		t.Errorf("zero maxAge IsStale = (%v, %v), want (false, 0)", stale, age)
+	}
+
+	unparsed := &codes.ExternalSets{Publication: "unknown"}
+	if stale, age := unparsed.IsStale(maxAge, now); stale || age != 0 {
+		t.Errorf("unparsed IsStale = (%v, %v), want (false, 0)", stale, age)
+	}
+
+	fresh := &codes.ExternalSets{Publication: "4Q2026"}
+	if stale, _ := fresh.IsStale(maxAge, now); stale {
+		t.Errorf("4Q2026 should not be stale at %v", now)
+	}
+
+	staleSet := &codes.ExternalSets{Publication: "1Q2025/v2"}
+	if stale, age := staleSet.IsStale(maxAge, now); !stale || age <= maxAge {
+		t.Errorf("1Q2025/v2 IsStale = (%v, %v), want (true, >%v)", stale, age, maxAge)
 	}
 }

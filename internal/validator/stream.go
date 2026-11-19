@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"sync"
 
 	"github.com/sebastienrousseau/askiso/internal/codes"
 	"github.com/sebastienrousseau/askiso/internal/xsd"
@@ -104,10 +105,22 @@ func ValidateReaderWithExternalSets(r io.Reader, schema *xsd.Schema, external *c
 	return res
 }
 
+var streamBufReaderPool = sync.Pool{
+	New: func() any {
+		return bufio.NewReaderSize(nil, 64<<10)
+	},
+}
+
 // streamParse builds the document tree, validating and discarding each subtree
 // at StreamDepth as it closes.
 func streamParse(r io.Reader, schema *xsd.Schema, v *validation) (*node, error) {
-	lines := newLineTracker(bufio.NewReaderSize(r, 64<<10))
+	br := streamBufReaderPool.Get().(*bufio.Reader)
+	br.Reset(r)
+	defer func() {
+		br.Reset(nil)
+		streamBufReaderPool.Put(br)
+	}()
+	lines := newLineTracker(br)
 	dec := xml.NewDecoder(lines)
 	dec.Strict = true
 	// Reject DTD entity references outright, exactly as the buffered parser
