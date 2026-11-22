@@ -135,3 +135,47 @@ func TestServerIgnoresClientCatalogPath(t *testing.T) {
 		t.Fatalf("lookup ignored Config.CatalogPath: %d %s", rec.Code, rec.Body.String())
 	}
 }
+
+// Responses never reveal where the operator keeps the catalogue, nor which
+// home directories the server searched for one.
+func TestServerHidesFilesystemPaths(t *testing.T) {
+	home := t.TempDir()
+	for _, k := range []string{"HOME", "XDG_DATA_HOME", "LocalAppData"} {
+		t.Setenv(k, home)
+	}
+	t.Setenv("ASKISO_CATALOG", "")
+	root := t.TempDir()
+	schemas := filepath.Join(root, "Payments Clearing and Settlement", "Version 11.0", "Schemas")
+	if err := os.MkdirAll(schemas, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(schemas, "pacs.999.001.01.xsd"), []byte(`<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	xml := `{"xml":"<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.10\"/>"}`
+
+	for _, tc := range []struct {
+		name, catalog, method, path, body string
+	}{
+		{"lookup", root, http.MethodGet, "/v1/lookup?id=pacs.999.001.01", ""},
+		{"search", root, http.MethodGet, "/v1/search?q=pacs.999", ""},
+		{"validate missing schema", root, http.MethodPost, "/v1/validate", xml},
+		{"validate no catalogue", "", http.MethodPost, "/v1/validate", xml},
+	} {
+		rec := httptest.NewRecorder()
+		New(Config{CatalogPath: tc.catalog}).Handler().ServeHTTP(rec,
+			httptest.NewRequest(tc.method, tc.path, strings.NewReader(tc.body)))
+		body := rec.Body.String()
+		if strings.Contains(body, root) || strings.Contains(body, home) {
+			t.Errorf("%s leaked a filesystem path: %s", tc.name, body)
+		}
+	}
+
+	rec := httptest.NewRecorder()
+	New(Config{CatalogPath: root}).Handler().ServeHTTP(rec,
+		httptest.NewRequest(http.MethodGet, "/v1/lookup?id=pacs.999.001.01", nil))
+	want := `"schema_path":"Payments Clearing and Settlement/Version 11.0/Schemas/pacs.999.001.01.xsd"`
+	if !strings.Contains(rec.Body.String(), want) {
+		t.Errorf("lookup schema_path not relative to the catalogue: %s", rec.Body.String())
+	}
+}

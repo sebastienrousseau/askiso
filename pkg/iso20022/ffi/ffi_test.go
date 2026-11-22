@@ -5,9 +5,13 @@ package ffi
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/sebastienrousseau/askiso/pkg/iso20022"
 )
 
 // isolate hides any catalogue installed on the developer's machine, so a test
@@ -120,5 +124,69 @@ func TestDispatchOperations(t *testing.T) {
 		if env.OK != tc.wantOK || env.ABI != ABIVersion {
 			t.Errorf("%s: ok=%v abi=%q, want ok=%v: %+v", tc.name, env.OK, env.ABI, tc.wantOK, env)
 		}
+	}
+}
+
+func hostInfo(t *testing.T) (iso20022.MessageInfo, string) {
+	t.Helper()
+	root := filepath.Join(t.TempDir(), "cat")
+	return iso20022.MessageInfo{
+		SchemaPath:  filepath.Join(root, "A", "Schemas", "x.xsd"),
+		SamplePath:  filepath.Join(root, "A", "Samples", "x.xml"),
+		ReportPaths: []string{filepath.Join(root, "A", "r.pdf"), filepath.Join(t.TempDir(), "elsewhere.pdf")},
+	}, root
+}
+
+func TestRelativizeHidesHostPaths(t *testing.T) {
+	in, root := hostInfo(t)
+	got := relativize(in, root).(iso20022.MessageInfo)
+	if got.SchemaPath != "A/Schemas/x.xsd" || got.SamplePath != "A/Samples/x.xml" {
+		t.Errorf("paths not relative: %+v", got)
+	}
+	if got.ReportPaths[0] != "A/r.pdf" || got.ReportPaths[1] != "elsewhere.pdf" {
+		t.Errorf("report paths = %v", got.ReportPaths)
+	}
+	if list := relativize([]iso20022.MessageInfo{in}, root).([]iso20022.MessageInfo); list[0].SchemaPath != "A/Schemas/x.xsd" {
+		t.Errorf("search results not relative: %+v", list)
+	}
+	if relativize("unchanged", root) != "unchanged" {
+		t.Errorf("relativize changed a value it does not know")
+	}
+}
+
+func TestRelPathEdges(t *testing.T) {
+	in, root := hostInfo(t)
+	if relPath("", root) != "" {
+		t.Errorf("empty path not kept empty")
+	}
+	if got := relPath(in.SchemaPath, ""); got != "x.xsd" {
+		t.Errorf("no root: got %q, want the file name", got)
+	}
+}
+
+func TestPinnedErrorTextHidesRoot(t *testing.T) {
+	in, root := hostInfo(t)
+	msg := (&source{private: true, root: root}).errorText(fmt.Errorf("reading %s: denied (in %s)", in.SchemaPath, root))
+	if strings.Contains(msg, root) || !strings.Contains(msg, "reading A/Schemas/x.xsd") {
+		t.Errorf("error kept the root: %q", msg)
+	}
+	if msg := (&source{root: root}).errorText(fmt.Errorf("at %s", root)); !strings.Contains(msg, root) {
+		t.Errorf("in-process error lost its path: %q", msg)
+	}
+}
+
+// In-process callers own the filesystem and keep absolute paths.
+func TestDispatchKeepsAbsolutePaths(t *testing.T) {
+	isolate(t)
+	dir := clientCatalogue(t)
+	named, _ := json.Marshal(map[string]string{"id": "pacs.999.001.01", "catalog_path": dir})
+	var env struct {
+		Data iso20022.MessageInfo `json:"data"`
+	}
+	if err := json.Unmarshal(Dispatch("lookup", named), &env); err != nil {
+		t.Fatal(err)
+	}
+	if !filepath.IsAbs(env.Data.SchemaPath) {
+		t.Errorf("Dispatch schema_path = %q, want absolute", env.Data.SchemaPath)
 	}
 }
