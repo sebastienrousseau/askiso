@@ -20,6 +20,9 @@ its pull requests and the SHA-256 of every download.
   polyglot SDKs.
 - `internal/server` and `cmd/askiso-server` stateless HTTP validation/linting
   daemon, shipped in `.goreleaser.yaml` archives.
+- `askiso-server -catalog` and `ffi.DispatchPinned`: the HTTP daemon reads
+  only the operator's catalogue and ignores `catalog_path` in request
+  bodies, so a client cannot make it read a directory of its choosing.
 - `internal/remediate` deterministic offline `<AdrLine>` remediator and
   `askiso audit` (`--format text|json|html`) SR2027 readiness scorecard.
 - `SetLogger(*slog.Logger)` on `internal/lsp` and `internal/mcp`, and

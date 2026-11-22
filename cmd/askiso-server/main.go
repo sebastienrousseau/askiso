@@ -31,6 +31,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("askiso-server", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	addr := fs.String("addr", "127.0.0.1:8080", "listen address")
+	catalog := fs.String("catalog", "", "catalogue directory every request reads (default: $ASKISO_CATALOG, then the standard locations)")
 	showVersion := fs.Bool("version", false, "print the version and exit")
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -45,9 +46,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 
 	logger := slog.New(slog.NewJSONHandler(stderr, nil))
 	srv := server.New(server.Config{
-		Addr:    *addr,
-		Version: version,
-		Logger:  logger,
+		Addr:        *addr,
+		Version:     version,
+		CatalogPath: *catalog,
+		Logger:      logger,
 	})
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

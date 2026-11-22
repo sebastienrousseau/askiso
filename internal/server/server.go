@@ -27,8 +27,12 @@ const (
 
 // Config configures an askiso-server HTTP instance.
 type Config struct {
-	Addr         string
-	Version      string
+	Addr    string
+	Version string
+	// CatalogPath is the catalogue every request reads; empty means the
+	// default search ($ASKISO_CATALOG, then the standard locations). It is set
+	// by the operator only: a catalog_path in a request body is ignored.
+	CatalogPath  string
 	MaxBodyBytes int64
 	Logger       *slog.Logger
 }
@@ -118,7 +122,7 @@ func (s *Server) handleDispatch(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	s.writeFFI(w, ffi.Dispatch(req.Op, req.Payload))
+	s.writeFFI(w, s.dispatch(req.Op, req.Payload))
 }
 
 func (s *Server) handleOp(op string) http.HandlerFunc {
@@ -127,20 +131,26 @@ func (s *Server) handleOp(op string) http.HandlerFunc {
 		if !ok {
 			return
 		}
-		s.writeFFI(w, ffi.Dispatch(op, body))
+		s.writeFFI(w, s.dispatch(op, body))
 	}
 }
 
 func (s *Server) handleLookup(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimSpace(r.URL.Query().Get("id"))
 	payload, _ := json.Marshal(map[string]string{"id": id})
-	s.writeFFI(w, ffi.Dispatch("lookup", payload))
+	s.writeFFI(w, s.dispatch("lookup", payload))
 }
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	payload, _ := json.Marshal(map[string]string{"query": q})
-	s.writeFFI(w, ffi.Dispatch("search", payload))
+	s.writeFFI(w, s.dispatch("search", payload))
+}
+
+// dispatch runs op against the operator's catalogue. Request bodies come from
+// the network, so they never get to name a directory to read.
+func (s *Server) dispatch(op string, payload []byte) []byte {
+	return ffi.DispatchPinned(op, payload, s.cfg.CatalogPath)
 }
 
 func (s *Server) readBody(w http.ResponseWriter, r *http.Request) ([]byte, bool) {

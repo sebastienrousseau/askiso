@@ -48,3 +48,10 @@ On error:
 | `translate_mt` | `{"mt":"..."}` | `Conversion` |
 | `translate_mx` | `{"xml":"..."}` | `Conversion` |
 | `classify_addresses` | `{"xml":"..."}` | `map[string]string` |
+
+`catalog_path` is honoured only by the in-process surfaces (C-ABI and WASM),
+whose caller already owns the filesystem. `askiso-server` ignores it: every
+request reads the catalogue the operator chose with `-catalog` (default:
+`$ASKISO_CATALOG`, then the standard locations), so a network client cannot
+make the daemon read a directory of its choosing. Go hosts get the same
+behaviour from `ffi.DispatchPinned`.
