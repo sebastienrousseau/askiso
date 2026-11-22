@@ -190,9 +190,9 @@ conformance:
 	@askiso_catalog=$${ASKISO_CATALOG:-$$HOME/Library/Application Support/askiso/catalog}; \
 	test -d "$$askiso_catalog" || { echo "no catalogue at $$askiso_catalog"; echo "set ASKISO_CATALOG or run: askiso catalog add <zip>"; exit 1; }; \
 	echo "Catalogue: $$askiso_catalog"; \
-	ASKISO_CATALOG="$$askiso_catalog" go test ./internal/generator/ -run 'Schema|Linter|BAH|RoundTrip' -v; \
-	ASKISO_CATALOG="$$askiso_catalog" go test ./internal/swift/ -run 'ConvertedMessagesValidate' -v; \
-	ASKISO_CATALOG="$$askiso_catalog" ASKISO_GEN_LIMIT=0 go test ./internal/schemagen/ -run 'Installed|LintClean' -v -timeout 20m; \
+	ASKISO_CATALOG="$$askiso_catalog" go test ./internal/generator/ -run 'Schema|Linter|BAH|RoundTrip' -v && \
+	ASKISO_CATALOG="$$askiso_catalog" go test ./internal/swift/ -run 'ConvertedMessagesValidate' -v && \
+	ASKISO_CATALOG="$$askiso_catalog" ASKISO_GEN_LIMIT=0 go test ./internal/schemagen/ -run 'Installed|LintClean' -v -timeout 20m && \
 	ASKISO_CATALOG="$$askiso_catalog" go test ./internal/validator/ -run 'StreamingAgrees' -v
 
 # Run against an operator-owned MyStandards export without retaining source

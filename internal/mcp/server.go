@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"sync"
 )
 
@@ -44,6 +45,7 @@ type Server struct {
 	out      io.Writer
 	// errOut receives diagnostics. It must never be the same stream as out.
 	errOut io.Writer
+	logger *slog.Logger
 
 	tools  []Tool
 	byName map[string]Tool
@@ -99,6 +101,24 @@ func (s *Server) SetVersion(v string) {
 		defer s.mu.Unlock()
 		s.Version = v
 	}
+}
+
+// SetLogger attaches an optional structured logger for server diagnostics.
+func (s *Server) SetLogger(l *slog.Logger) {
+	s.mu.Lock()
+	s.logger = l
+	s.mu.Unlock()
+}
+
+func (s *Server) logf(format string, args ...any) {
+	msg := fmt.Sprintf(format, args...)
+	s.mu.RLock()
+	logger := s.logger
+	s.mu.RUnlock()
+	if logger != nil {
+		logger.Warn(msg)
+	}
+	_, _ = fmt.Fprintf(s.errOut, "askiso-mcp: %s\n", msg)
 }
 
 func (s *Server) register(tools ...Tool) {

@@ -25,6 +25,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -366,44 +367,64 @@ func codePlaceholder(f xsd.Facets) string {
 	return string([]rune(b.String())[:width])
 }
 
+// fixedValues are lexical values that satisfy their base type whatever the
+// facets, because ISO 20022 places none on these types that they could break.
+var fixedValues = map[string]string{
+	"boolean":      "true",
+	"date":         "2026-11-14",
+	"time":         "09:00:00",
+	"gYear":        "2026",
+	"gYearMonth":   "2026-11",
+	"gMonth":       "--11",
+	"gDay":         "---14",
+	"duration":     "P1D",
+	"base64Binary": "QW5jaG9y",
+	"hexBinary":    "416E63686F72",
+	"anyURI":       "https://www.iso20022.org/",
+}
+
 // valueForFacets builds a value from a base type and its constraints.
 func valueForFacets(base string, f xsd.Facets) (string, error) {
-	switch normaliseBase(base) {
+	b := normaliseBase(base)
+	if v, ok := fixedValues[b]; ok {
+		return v, nil
+	}
+	switch b {
 	case "decimal", "float", "double":
 		return decimalValue(f), nil
 	case "integer", "int", "long", "short", "nonNegativeInteger", "positiveInteger":
 		return integerValue(f), nil
-	case "boolean":
-		return "true", nil
-	case "date":
-		return "2026-11-14", nil
 	case "dateTime":
-		// An explicit UTC offset is valid xs:dateTime and also satisfies the
-		// CBPR_DateTime restriction, which deliberately rejects the equivalent
-		// shorthand "Z" form.
-		return "2026-11-14T09:00:00+00:00", nil
-	case "time":
-		return "09:00:00", nil
-	case "gYear":
-		return "2026", nil
-	case "gYearMonth":
-		return "2026-11", nil
-	case "gMonth":
-		return "--11", nil
-	case "gDay":
-		return "---14", nil
-	case "duration":
-		return "P1D", nil
-	case "base64Binary":
-		return "QW5jaG9y", nil
-	case "hexBinary":
-		return "416E63686F72", nil
-	case "anyURI":
-		return "https://www.iso20022.org/", nil
-	case "string", "normalizedString", "token", "NMTOKEN", "":
-		return stringValue(f)
+		return dateTimeValue(f), nil
 	}
 	return stringValue(f)
+}
+
+// dateTimeCandidates are equivalent instants in the two forms the catalogue's
+// patterns ask for. The explicit offset comes first: CBPR_DateTime requires it
+// and rejects "Z", while head.001.001.01's ISONormalisedDateTime requires "Z".
+var dateTimeCandidates = []string{"2026-11-14T09:00:00+00:00", "2026-11-14T09:00:00Z"}
+
+// dateTimeValue returns the first candidate every pattern of the type accepts.
+func dateTimeValue(f xsd.Facets) string {
+	for _, v := range dateTimeCandidates {
+		if matchesAll(v, f.Pattern) {
+			return v
+		}
+	}
+	return dateTimeCandidates[0]
+}
+
+// matchesAll reports whether v satisfies every XSD pattern. XSD patterns are
+// anchored to the whole value; one Go cannot compile counts as not matching.
+func matchesAll(v string, patterns []string) bool {
+	for _, p := range patterns {
+		re, err := regexp.Compile(`^(?:` + p + `)$`)
+		if err != nil || !re.MatchString(v) {
+			return false
+		}
+	}
+	return true
 }
 
 // stringValue satisfies the pattern and length facets of a text type.

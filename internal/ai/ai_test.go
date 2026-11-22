@@ -100,3 +100,19 @@ func fixtureIndexWithLongSample(t *testing.T) *catalog.Index {
 	}
 	return idx
 }
+
+func TestNormalizeQuery_Formats(t *testing.T) {
+	cases := []struct {
+		in   string
+		want string
+	}{
+		{"plain question without codes", "plain question without codes"},
+		{"explain pacs008 and pain_001", "explain pacs.008 and pain.001"},
+		{"check pacs 008 001 10 schema", "check pacs.008.001.10 schema"},
+	}
+	for _, tc := range cases {
+		if got := NormalizeQuery(tc.in); got != tc.want {
+			t.Errorf("NormalizeQuery(%q) = %q, want %q", tc.in, got, tc.want)
+		}
+	}
+}

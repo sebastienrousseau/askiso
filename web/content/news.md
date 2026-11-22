@@ -38,16 +38,18 @@ To follow along without visiting: subscribe to the [feed](/rss.xml) in any
 reader, watch releases on GitHub, or ask on the [contact page](/contact/) to be
 told by email when something changes that affects the messages you send.
 
-## v0.0.6 - 1 November 2026
+## v0.0.6 - 22 November 2026
 
-The release notes update. Every release page on GitHub now follows one
-consistent structure: its name and version, the highlights explaining what
-changed and why, the pull requests responsible, and a published checksum for
-every download. The verification command in the README works again, because it
-previously referred to signature files that releases had stopped publishing.
-The README itself follows a layout shared across our projects, alongside a
-short demonstration, a changelog and an architecture guide describing how the
-components fit together. The site is now generated with ssg 0.0.71.
+The any-language update. `askiso-server` serves linting, validation,
+translation and lookup over HTTP, and a C shared library offers the same
+operations to any language with a C foreign function interface, both through
+one JSON contract. The server reads only the catalogue its operator configures
+and keeps host filesystem paths out of its responses. `askiso audit` measures
+how ready a collection of messages is for structured postal addresses. AskISO
+now requires Go 1.26.11, which fixes a crash in the HTTP request size limit
+the server depends on. Every release page now lists its highlights, pull
+requests and a checksum for every download, and the README's verification
+command works again. The site is generated with ssg 0.0.76.
 [Read the v0.0.6 release notes and download it](https://github.com/sebastienrousseau/askiso/releases/tag/v0.0.6).
 
 ## v0.0.5 - 1 November 2026

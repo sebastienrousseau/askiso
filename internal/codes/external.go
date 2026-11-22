@@ -17,6 +17,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Most ISO 20022 code sets are enumerated in the schemas, and AskISO reads them
@@ -318,6 +319,27 @@ func publicationFromName(name string) string {
 		publication += "/v" + match[2]
 	}
 	return publication
+}
+
+// IsStale reports whether the imported publication is older than maxAge at now.
+// When Publication cannot be parsed as a quarterly marker (<1-4>Q<YYYY>), it
+// returns (false, 0).
+func (e *ExternalSets) IsStale(maxAge time.Duration, now time.Time) (bool, time.Duration) {
+	if e == nil || maxAge <= 0 {
+		return false, 0
+	}
+	match := publicationNameRE.FindStringSubmatch(e.Publication)
+	if match == nil {
+		return false, 0
+	}
+	q := int(match[1][0] - '0')
+	year := int(match[1][2]-'0')*1000 + int(match[1][3]-'0')*100 + int(match[1][4]-'0')*10 + int(match[1][5]-'0')
+	pubStart := time.Date(year, time.Month((q-1)*3+1), 1, 0, 0, 0, 0, time.UTC)
+	age := now.UTC().Sub(pubStart)
+	if age <= maxAge {
+		return false, age
+	}
+	return true, age
 }
 
 func externalFileSHA256(path string) (string, error) {

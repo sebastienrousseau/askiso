@@ -79,3 +79,23 @@ func TestEmptyPatternSamplesNothing(t *testing.T) {
 		t.Fatalf("empty pattern sample = %q, %v", got, err)
 	}
 }
+
+// head.001.001.01's ISONormalisedDateTime requires the "Z" form, while
+// CBPR_DateTime requires an explicit offset. A generated dateTime has to
+// satisfy whichever pattern its own type declares.
+func TestDateTimeValueFollowsItsPattern(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		pattern []string
+		want    string
+	}{
+		{"no pattern", nil, "2026-11-14T09:00:00+00:00"},
+		{"ISONormalisedDateTime", []string{".*Z"}, "2026-11-14T09:00:00Z"},
+		{"CBPR_DateTime", []string{`.*(\+|-)((0[0-9])|(1[0-3])):[0-5][0-9]`}, "2026-11-14T09:00:00+00:00"},
+	} {
+		got, err := valueForFacets("xs:dateTime", xsd.Facets{Pattern: tc.pattern})
+		if err != nil || got != tc.want {
+			t.Errorf("%s: got %q, %v; want %q", tc.name, got, err, tc.want)
+		}
+	}
+}
