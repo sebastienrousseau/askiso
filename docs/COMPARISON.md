@@ -1,11 +1,18 @@
 # Ecosystem Comparison
 
-| Capability | AskISO | Prowide (OSS) | Moov `iso20022` | Pain001 | Volante / Form3 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Core Runtime** | Go (`pkg/iso20022`) + C-ABI + WASM | Java (JVM) | Go | Python | Commercial SaaS / Enterprise |
-| **Streaming XSD Validation (`camt.053`)** | Yes (`ValidateStream`, bounded memory) | DOM / JAXB | Struct-only | XSD gate (`pain.001`/`008`) | Yes (commercial) |
-| **Dated Scheme Profiles (CBPR+ / SR2027)** | Yes (`cbpr-2026`, `RuleOverlay`) | Commercial tier | No | No | Commercial |
-| **SR2027 Address Classification & Audit** | Yes (`audit`, `internal/remediate`) | No | No | No | Commercial |
-| **MCP & LSP Protocol Servers** | Yes (`askiso-mcp`, `askiso-lsp`) | No | No | MCP only | No |
-| **SARIF 2.1 CI Integration** | Yes (CLI + GitHub Action) | No | No | No | No |
-| **Zero-Redistribution Air-Gapped Mode** | Yes | Yes | Yes | Yes | N/A |
+AskISO has not been benchmarked or feature-audited against other ISO 20022
+tools, so this page makes no claim about them. The one comparison it makes is
+measured: schema validation against libxml2, the reference implementation,
+across the whole catalogue.
+
+| Project | XSD validation | ISO 20022 business rules and scheme profiles | MT ⇄ MX conversion |
+| :--- | :--- | :--- | :--- |
+| **AskISO** | Pure Go; agrees with libxml2 on 4,746 of 4,746 catalogue documents | Yes | Seven MT pairs, both ways |
+| `xmllint` (libxml2) | Yes, the reference | No | No |
+
+`make differential` reproduces the validation result against your own
+catalogue: AskISO and libxml2 accept the same 1,035 documents and reject the
+same 3,711.
+
+A comparison with another tool belongs here only once it has been measured or
+checked against that tool's own documentation, with the source named.

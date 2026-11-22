@@ -11,13 +11,13 @@ its pull requests and the SHA-256 of every download.
 
 ## [Unreleased]
 
-## [0.0.6] - 2026-11-18
+## [0.0.6] - 2026-11-22
 
 ### Added
 
 - `pkg/iso20022/ffi` (`askiso-abi/v1` JSON envelope dispatcher) and
-  `cmd/askiso-cabi` (`-buildmode=c-shared` shared library entrypoint) for
-  polyglot SDKs.
+  `cmd/askiso-cabi` (`-buildmode=c-shared` shared library entrypoint), which
+  any language with a C FFI can load.
 - `internal/server` and `cmd/askiso-server` stateless HTTP validation/linting
   daemon, shipped in `.goreleaser.yaml` archives.
 - `askiso-server -catalog` and `ffi.DispatchPinned`: the HTTP daemon reads
@@ -52,11 +52,24 @@ its pull requests and the SHA-256 of every download.
   `internal/ai.NormalizeQuery` avoids double regex matching.
 - CI's test jobs take their Go version from go.mod and are named `Test (<os>, go go.mod)`, so the checks that branch protection requires keep their names across toolchain bumps.
 - The README follows the portfolio template, with a rendered demo.
-- The website builds with ssg 0.0.71.
+- The website builds with ssg 0.0.76.
 - `SECURITY.md` names the latest 0.0.x release as the supported version.
 
 ### Fixed
 
+- Schema-driven generation wrote `head.001.001.01`'s `CreDt` with a `+00:00`
+  offset, which its `ISONormalisedDateTime` pattern (`.*Z`) rejects. A
+  generated `dateTime` now takes the form its own type's pattern accepts, and
+  all 4,746 catalogue schemas generate valid messages again.
+- `make conformance` reported success when any suite but the last failed,
+  which is how the `head.001.001.01` failure went unnoticed. It now stops at
+  the first failing suite.
+- The README, `docs/ABI.md`, `docs/ARCHITECTURE.md`, `docs/COMPARISON.md` and
+  `docs/COMPLIANCE.md` no longer name language packages that are not
+  published, claim the WebAssembly build uses the FFI layer, compare AskISO
+  with other tools without a measurement, or call the SPDX SBOMs CycloneDX.
+  The README covers `askiso-server`, the C library, `ask`, `audit` and
+  `list`, and its smoke test count and Go floor advisory are corrected.
 - The README's release verification command used `.sig` and `.pem` files
   that releases no longer ship; it now verifies the Sigstore bundle.
 - Every action in the Website workflow is pinned by commit, and the browser

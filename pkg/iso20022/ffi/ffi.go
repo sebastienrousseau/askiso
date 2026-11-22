@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 // Package ffi provides a stable, JSON-envelope dispatcher over pkg/iso20022
-// shared by the C-ABI (cmd/askiso-cabi), WASM, and HTTP server surfaces.
-// Every language SDK (TypeScript, Python, Java) binds to this contract so
-// validation, linting, and translation verdicts never drift from the Go core.
+// shared by the C-ABI library (cmd/askiso-cabi) and the HTTP server
+// (cmd/askiso-server), so a caller in any language gets the same validation,
+// linting and translation verdicts as the Go core.
 package ffi
 
 import (
@@ -33,7 +33,7 @@ type Envelope struct {
 // Envelope. It never panics and always returns valid JSON.
 //
 // Dispatch honours a "catalog_path" field in the payload, so it is for
-// in-process callers that already own the filesystem (the C-ABI library, WASM).
+// in-process callers that already own the filesystem, such as the C-ABI library.
 // A host that takes payloads from the network uses DispatchPinned instead.
 func Dispatch(op string, payload []byte) []byte {
 	return run(op, payload, &source{path: requestedCatalog(payload)})

@@ -40,7 +40,7 @@ row and demo block.
 
 **The AskISO ecosystem**
 
-- [The AskISO ecosystem](#the-askiso-ecosystem) - CLI and TUI, MCP server, language server, Go SDK, website, GitHub Action
+- [The AskISO ecosystem](#the-askiso-ecosystem) - CLI and TUI, MCP server, language server, HTTP server, Go SDK, C library, website, GitHub Action
 
 **Library reference**
 
@@ -70,6 +70,7 @@ row and demo block.
 go install github.com/sebastienrousseau/askiso/cmd/askiso@latest
 go install github.com/sebastienrousseau/askiso/cmd/askiso-mcp@latest
 go install github.com/sebastienrousseau/askiso/cmd/askiso-lsp@latest
+go install github.com/sebastienrousseau/askiso/cmd/askiso-server@latest
 ```
 
 `go install` builds from source and is the quickest way in. The Go SDK is
@@ -84,16 +85,19 @@ cd askiso && make build
 
 No external dependencies. Validation is pure Go, so there is no libxml2 or cgo to
 install and results are identical on every platform. `xmllint`, if you have it, can be
-used as a cross-check with `--engine libxml2`.
+used as a cross-check with `--engine libxml2`. The one exception is the optional C
+shared library, which cgo builds (see [From other languages](#from-other-languages)).
 
 ### Release archives and packages
 
 Every [release](https://github.com/sebastienrousseau/askiso/releases) attaches
 archives for Linux, macOS and Windows on amd64 and arm64, `.deb`, `.rpm`, `.apk`
 and Arch `.pkg.tar.zst` packages for Linux, an SBOM per archive, and a Sigstore
-signature over the checksums. Each archive carries all three binaries: `askiso`
-(CLI and TUI), `askiso-mcp` (Model Context Protocol server) and `askiso-lsp`
-(language server). AskISO redistributes no ISO 20022 specification content.
+signature over the checksums. Each archive and package carries all four binaries:
+`askiso` (CLI and TUI), `askiso-mcp` (Model Context Protocol server), `askiso-lsp`
+(language server) and `askiso-server` (HTTP server). The C shared library is not
+attached; build it from source. AskISO redistributes no ISO 20022 specification
+content.
 
 Homebrew and Scoop carry nothing yet: publishing to a tap writes to a second
 repository, and the token for it is not configured. The cask and the manifest are
@@ -143,14 +147,16 @@ Or run the identical bundle locally with `make web-serve`.
 ## Requirements
 
 - **Go 1.26.11 or newer** to build from source or `go install`. That is a floor
-  rather than a preference: it is the release carrying the standard library fixes
-  for the advisories `govulncheck` reports against anything older, one of which
-  ([GO-2026-6088](https://pkg.go.dev/vuln/GO-2026-6088)) guards `encoding/xml`
-  against unbounded decode recursion, directly on the path every `validate`, `lint`
-  and `convert` takes through untrusted input. The `go` directive in `go.mod`
-  enforces it.
-- **Platforms:** Linux, macOS and Windows. CI tests all three on every push, and
-  releases ship amd64 and arm64 builds of each.
+  rather than a preference: 1.26.11 is the first release that fixes
+  [GO-2026-6859](https://pkg.go.dev/vuln/GO-2026-6859), a crash in `net/http`'s
+  `MaxBytesReader`, which `askiso-server` and `askiso mock` use to bound request
+  bodies. It also carries every earlier standard library fix, such as
+  [GO-2026-6088](https://pkg.go.dev/vuln/GO-2026-6088), which guards `encoding/xml`
+  against unbounded decode recursion on the path every `validate`, `lint` and
+  `convert` takes through untrusted input. The `go` directive in `go.mod` enforces
+  it.
+- **Platforms:** Linux, macOS and Windows. CI tests all three on every push to
+  `main` and every pull request, and releases ship amd64 and arm64 builds of each.
 - **A catalogue is optional.** The index of the standard is embedded; only the
   commands that read XSD text need the message sets you download from
   iso20022.org (see [Configuration](#configuration)).
@@ -201,7 +207,9 @@ of truth rather than a mirror of unknown age.
 | `askiso` | CLI and interactive TUI | Search, inspect, lint, validate, convert and generate messages in a terminal |
 | `askiso-mcp` | Model Context Protocol server | Let an AI assistant check the specification instead of recalling it |
 | `askiso-lsp` | Language server for ISO 20022 XML | Diagnostics, hover, completion and outline in an editor |
+| `askiso-server` | HTTP server you run yourself | Lint, validate, translate and look up messages from any language over HTTP |
 | `pkg/iso20022` | Go SDK, the shared core | Embed the same checks in a Go service |
+| `cmd/askiso-cabi` | C shared library over a JSON contract | Call the engine in-process from C or any language with a C FFI |
 | [askiso.io](https://askiso.io) | The engine compiled to WebAssembly | Check a message in the browser, nothing sent anywhere |
 | `action.yml` | Composite GitHub Action | Annotate pull requests that introduce non-compliant messages |
 
@@ -220,9 +228,10 @@ lookup, schema diff, and XML/JSON conversion.
 }
 ```
 
-It speaks newline-delimited JSON-RPC 2.0 on stdin and stdout, writes nothing
-else to stdout, and needs no catalogue for the seven tools that work in light
-mode. `askiso-mcp --tools` lists what it exposes.
+It speaks newline-delimited JSON-RPC 2.0 on stdin and stdout and writes nothing
+else to stdout. Seven tools need no catalogue; `askiso_generate` needs one only
+for messages beyond its four templates, and `askiso_validate` and `askiso_diff`
+always do. `askiso-mcp --tools` lists what it exposes.
 
 ### Using AskISO from an editor
 
@@ -285,6 +294,38 @@ if !info.Installed {
 The API reports `Installed: false` rather than failing, so callers can always tell the
 user what to download.
 
+### As an HTTP service
+
+`askiso-server` serves the engine over HTTP for services that are not written in Go.
+You run it yourself; nothing is sent to an AskISO-operated service.
+
+```bash
+askiso-server -addr 127.0.0.1:8080 -catalog ~/iso20022-catalogue
+
+curl -s 'http://127.0.0.1:8080/v1/lookup?id=pacs.008.001.10'
+curl -s -X POST http://127.0.0.1:8080/v1/lint -d '{"xml":"<Document>...</Document>","profile":"cbpr-2026"}'
+```
+
+`POST /v1/dispatch` takes `{"op": ..., "payload": ...}` for any operation in
+[`docs/ABI.md`](docs/ABI.md); `/v1/lint`, `/v1/validate`, `/v1/translate/mt`,
+`/v1/translate/mx`, `/v1/classify-addresses`, `/v1/lookup`, `/v1/search` and
+`/v1/healthz` are shortcuts. Request bodies are capped at 8 MiB. The server reads only
+the catalogue named by `-catalog` (or found by the usual search), never a path in a
+request, and its responses give file paths relative to that catalogue.
+
+### From other languages
+
+`cmd/askiso-cabi` builds the same operations as a C shared library:
+
+```bash
+go build -buildmode=c-shared -o libaskiso.so ./cmd/askiso-cabi
+```
+
+It exports `askiso_abi_version`, `askiso_call(op, json_payload)` and `askiso_free`;
+every call returns an `askiso-abi/v1` JSON envelope, described in
+[`docs/ABI.md`](docs/ABI.md). No language packages are published yet: bind the library
+with your language's C FFI.
+
 ### The website
 
 `web/site` is a static page that loads `pkg/iso20022` compiled to WebAssembly, so the
@@ -293,7 +334,7 @@ gets the identical verdict to one linted in a terminal or a CI pipeline.
 
 ```bash
 make web         # build the WebAssembly bundle
-make web-test    # 30-check smoke test of the Go/JS bridge (needs node)
+make web-test    # 74-check smoke test of the Go/JS bridge (needs node)
 make web-serve   # http://127.0.0.1:8765
 ```
 
@@ -345,7 +386,7 @@ embedded index.
 | Generation | Templates with rail presets for four messages; schema-driven generation for the rest | Built; schema-driven needs a catalogue |
 | Change analysis | Path-level schema diff with breaking-change classification | Built; needs a catalogue |
 | Private CBPR+ | Local rule packs and versioned workspaces from an institution's own MyStandards exports | Built; nothing leaves the machine |
-| Integrations | MCP server, language server, Go SDK, WebAssembly website, GitHub Action with SARIF | Built |
+| Integrations | MCP server, language server, HTTP server, Go SDK, C shared library, WebAssembly website, GitHub Action with SARIF | Built |
 | Simulation | Lifecycle flows, sequence diagrams and a local mock clearing rail | Built |
 
 ---
@@ -367,7 +408,8 @@ catalogue (`make differential`).
 ## Benchmarks
 
 No throughput or latency benchmarks are recorded in this repository, so none are
-quoted, and `docs/BENCHMARKS.md` does not exist yet. The only resource figures the
+quoted. [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md) describes how streaming validation
+bounds its memory and which tests hold it to that. The only resource figures the
 project states are the memory cost of streaming validation, also listed under
 [Known limitations](#known-limitations):
 
@@ -386,6 +428,9 @@ Commands marked ◆ need a catalogue; the rest work standalone.
 
 | Command | Description |
 | :--- | :--- |
+| `askiso ask [prompt]` | Ask the assistant (Ollama or an OpenAI-compatible provider), or search private CBPR+ material with `--cbpr-pack` |
+| `askiso audit <xml\|dir>...` | Score SR2027 structured-address readiness across messages (`--format text/json/html`) |
+| `askiso list` ◆ | List the message set categories in your catalogue, with version and schema counts |
 | `askiso catalog fetch <msg\|set>` | Open the right download page, then import the archive when it lands |
 | `askiso catalog add <zip\|dir>...` | Import message sets downloaded from iso20022.org (`--dry-run`, `--to`) |
 | `askiso catalog status` | Compare what you have installed against all 285 published sets (`--all`) |
@@ -1004,10 +1049,11 @@ make readme-check  # this README against the portfolio template
 make demo          # re-render .github/demo.gif from .github/demo.tape (needs vhs)
 ```
 
-CI runs the test suite on Linux, macOS and Windows on every push, plus `govulncheck`,
-gosec and CodeQL. Coverage is enforced at 97.5% on a runner with no catalogue
-installed, which is a stricter measurement than a developer machine gives you: anything
-reachable only when a catalogue happens to be present does not count towards it.
+CI runs the test suite on Linux, macOS and Windows on every push to `main` and every
+pull request, plus `govulncheck`, gosec and CodeQL. Coverage is enforced at 97.5% on
+a runner with no catalogue installed, which is a stricter measurement than a developer
+machine gives you: anything reachable only when a catalogue happens to be present does
+not count towards it.
 
 `make conformance` and `make differential` are not run in CI, because CI has no
 catalogue. Run them before tagging a release. Conformance records known defects
@@ -1029,12 +1075,15 @@ the safe-harbour terms.
 
 - **Local processing.** The CLI runs on your machine, the website is static, and the
   browser build runs in the tab: there is no AskISO-operated service that receives your
-  messages. Private CBPR+ material is read in place and never uploaded (see
+  messages. `askiso-server` runs wherever you deploy it, reads only the catalogue its
+  operator configures, and keeps host paths out of its responses. Private CBPR+
+  material is read in place and never uploaded (see
   [Bring your own CBPR+ guidelines](#bring-your-own-cbpr-guidelines)).
 - **Untrusted input.** The pure-Go XML parser rejects DTD entity references before any
   external tool is invoked, and `xmllint`, when used, runs with `--nonet`. Native fuzz
   targets cover the parsers; CI runs a fuzz smoke campaign, race-detector repetitions,
-  `checkptr`, AddressSanitizer and MemorySanitizer on every push.
+  `checkptr`, AddressSanitizer and MemorySanitizer on every push to `main` and every
+  pull request.
 - **No bundled specifications.** AskISO reads schemas you obtained from the Registration
   Authority, so a compromised release cannot substitute altered schemas for yours.
 - **Supply chain.** `govulncheck`, gosec (SARIF to code scanning), CodeQL and dependency
@@ -1051,6 +1100,10 @@ the safe-harbour terms.
 - **API reference:** [pkg.go.dev](https://pkg.go.dev/github.com/sebastienrousseau/askiso/pkg/iso20022)
 - **Developer docs:** [CONTRIBUTING.md](CONTRIBUTING.md), [Development](#development)
   and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **Reference:** [docs/ABI.md](docs/ABI.md) (the JSON contract behind the HTTP server
+  and the C library), [docs/SECURITY.md](docs/SECURITY.md),
+  [docs/COMPLIANCE.md](docs/COMPLIANCE.md), [docs/BENCHMARKS.md](docs/BENCHMARKS.md)
+  and [docs/COMPARISON.md](docs/COMPARISON.md)
 - **Examples:** [examples/README.md](examples/README.md)
 - **Releases:** [GitHub releases](https://github.com/sebastienrousseau/askiso/releases),
   [CHANGELOG.md](CHANGELOG.md), and the highlights each release page is

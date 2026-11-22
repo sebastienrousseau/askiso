@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2026 Sebastien Rousseau <sebastian.rousseau@gmail.com>
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-// Command askiso-cabi builds the AskISO C-ABI shared library (-buildmode=c-shared)
-// consumed by polyrepo language SDKs (Python, Java, Rust) for zero-drift
-// offline ISO 20022 validation, linting, and translation.
+// Command askiso-cabi builds the AskISO C-ABI shared library (-buildmode=c-shared),
+// which any language with a C FFI can load for offline ISO 20022 validation,
+// linting and translation with the same verdicts as the Go core.
 package main
 
 /*
