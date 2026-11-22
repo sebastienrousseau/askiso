@@ -11,6 +11,15 @@ its pull requests and the SHA-256 of every download.
 
 ## [Unreleased]
 
+### Fixed
+
+- Build provenance covered only `checksums.txt`, so the README's
+  `gh attestation verify <archive>` returned 404. The release workflow now
+  attests every artifact listed in `checksums.txt`, and the README shows how
+  to verify 0.0.6 and earlier through the checksum file.
+- The README said the Homebrew cask and Scoop manifest are attached to each
+  release; they are built but not attached.
+
 ## [0.0.6] - 2026-11-22
 
 ### Added

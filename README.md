@@ -100,9 +100,9 @@ attached; build it from source. AskISO redistributes no ISO 20022 specification
 content.
 
 Homebrew and Scoop carry nothing yet: publishing to a tap writes to a second
-repository, and the token for it is not configured. The cask and the manifest are
-built and attached to each release, so adding that token starts publishing them
-without any other change. Once it is, these are the commands:
+repository, and the token for it is not configured. Every release builds the cask
+and the manifest but neither publishes nor attaches them, so adding that token
+starts publishing them without any other change. Once it is, these are the commands:
 
 ```bash
 # macOS and Linux
@@ -124,11 +124,20 @@ cosign verify-blob checksums.txt \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
-The release workflow also records SLSA build provenance for every artifact listed in
-`checksums.txt`, which `gh` verifies against this repository:
+The release workflow also records SLSA build provenance, which `gh` verifies against
+this repository. Up to and including 0.0.6 it covers `checksums.txt`, so verify that
+file and then check the archive's hash against it:
 
 ```bash
-gh attestation verify askiso_0.0.6_linux_amd64.tar.gz --owner sebastienrousseau
+gh attestation verify checksums.txt --owner sebastienrousseau
+shasum -a 256 --ignore-missing -c checksums.txt
+```
+
+From 0.0.7 every artifact listed in `checksums.txt` carries its own provenance, so
+an archive can be verified directly:
+
+```bash
+gh attestation verify askiso_0.0.7_linux_amd64.tar.gz --owner sebastienrousseau
 ```
 
 ### Without installing anything
