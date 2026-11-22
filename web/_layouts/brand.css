@@ -1372,6 +1372,39 @@ pre.highlight,
   color: var(--ink-soft);
 }
 
+/* ssg 0.0.76 also colours the tokens inside a block, and switches that palette
+   on prefers-color-scheme alone too. A visitor who chose the opposite of their
+   system therefore got one theme's token ink on the other theme's background:
+   #032563 strings on the dark block (1.24:1), #addcff on the light one
+   (1.35:1). An explicit choice now selects the matching palette, the
+   generator's own colours for that theme. With no choice, the generator's
+   media query still decides, and it agrees with the background above. */
+:root[data-theme="light"] pre.highlight .comment { color: #4b535d; }
+:root[data-theme="light"] pre.highlight .string { color: #032563; }
+:root[data-theme="light"] pre.highlight .constant,
+:root[data-theme="light"] pre.highlight .support.type { color: #023b95; }
+:root[data-theme="light"] pre.highlight .keyword,
+:root[data-theme="light"] pre.highlight .storage,
+:root[data-theme="light"] pre.highlight .invalid { color: #a0111f; }
+:root[data-theme="light"] pre.highlight .entity.name,
+:root[data-theme="light"] pre.highlight .support.function { color: #622cbc; }
+:root[data-theme="light"] pre.highlight .entity.name.tag { color: #024c1a; }
+:root[data-theme="light"] pre.highlight .variable,
+:root[data-theme="light"] pre.highlight .entity.other.attribute-name { color: #702c00; }
+
+:root[data-theme="dark"] pre.highlight .comment { color: #a2acb7; }
+:root[data-theme="dark"] pre.highlight .string { color: #addcff; }
+:root[data-theme="dark"] pre.highlight .constant,
+:root[data-theme="dark"] pre.highlight .support.type { color: #91cbff; }
+:root[data-theme="dark"] pre.highlight .keyword,
+:root[data-theme="dark"] pre.highlight .storage,
+:root[data-theme="dark"] pre.highlight .invalid { color: #ff9492; }
+:root[data-theme="dark"] pre.highlight .entity.name,
+:root[data-theme="dark"] pre.highlight .support.function { color: #dbb7ff; }
+:root[data-theme="dark"] pre.highlight .entity.name.tag { color: #72f088; }
+:root[data-theme="dark"] pre.highlight .variable,
+:root[data-theme="dark"] pre.highlight .entity.other.attribute-name { color: #ffb757; }
+
 /* A code block scrolls horizontally, so it is a scroll region, and a scroll
    region a keyboard user cannot focus holds content they cannot reach. The
    attribute is added at build time; this is the visible half of the same fix. */
