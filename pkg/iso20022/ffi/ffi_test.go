@@ -167,7 +167,8 @@ func TestRelPathEdges(t *testing.T) {
 func TestPinnedErrorTextHidesRoot(t *testing.T) {
 	in, root := hostInfo(t)
 	msg := (&source{private: true, root: root}).errorText(fmt.Errorf("reading %s: denied (in %s)", in.SchemaPath, root))
-	if strings.Contains(msg, root) || !strings.Contains(msg, "reading A/Schemas/x.xsd") {
+	// Error text keeps the platform's separators; only the root is removed.
+	if strings.Contains(msg, root) || !strings.Contains(msg, "reading "+filepath.Join("A", "Schemas", "x.xsd")) {
 		t.Errorf("error kept the root: %q", msg)
 	}
 	if msg := (&source{root: root}).errorText(fmt.Errorf("at %s", root)); !strings.Contains(msg, root) {
