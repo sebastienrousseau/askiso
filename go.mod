@@ -13,7 +13,7 @@ require (
 	go.uber.org/goleak v1.3.0
 	golang.org/x/sys v0.50.0
 	golang.org/x/term v0.48.0
-	golang.org/x/text v0.43.0
+	golang.org/x/text v0.44.0
 	pgregory.net/rapid v1.3.0
 )
 
