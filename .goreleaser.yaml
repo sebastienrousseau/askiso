@@ -75,6 +75,29 @@ builds:
     ldflags:
       - -s -w -X main.version={{ .Version }}
 
+# Sign and notarise the macOS executables before they are archived, with the
+# Developer ID certificate and an App Store Connect API key from the release
+# environment. GoReleaser uses quill for this, so the release stays on a Linux
+# runner. Without MACOS_SIGN_P12 (a local snapshot) the step is skipped; the
+# Release workflow refuses to run a tag without it.
+notarize:
+  macos:
+    - enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'
+      ids:
+        - askiso
+        - askiso-mcp
+        - askiso-lsp
+        - askiso-server
+      sign:
+        certificate: '{{ .Env.MACOS_SIGN_P12 }}'
+        password: '{{ .Env.MACOS_SIGN_PASSWORD }}'
+      notarize:
+        issuer_id: '{{ .Env.MACOS_NOTARY_ISSUER_ID }}'
+        key_id: '{{ .Env.MACOS_NOTARY_KEY_ID }}'
+        key: '{{ .Env.MACOS_NOTARY_KEY }}'
+        wait: true
+        timeout: 20m
+
 # One archive carrying all four binaries: the CLI, the MCP server, the language
 # server, and the HTTP daemon are one tool with four front ends.
 archives:
@@ -166,45 +189,11 @@ nfpms:
       - src: README.md
         dst: /usr/share/doc/askiso/README.md
 
-# homebrew_casks replaces the deprecated brews section: Homebrew now expects a
-# binary distribution to be a cask rather than a formula.
-homebrew_casks:
-  - name: askiso
-    # Publishing to the tap needs a token for a different repository, which the
-    # default GITHUB_TOKEN cannot provide. Without it the cask is built and
-    # attached to the release but not pushed, so a release still succeeds on a
-    # repository that has not been given one -- rather than failing after the
-    # binaries were already produced.
-    skip_upload: '{{ if eq .Env.HOMEBREW_TAP_TOKEN "" }}true{{ else }}false{{ end }}'
-    repository:
-      owner: sebastienrousseau
-      name: homebrew-tap
-      token: '{{ .Env.HOMEBREW_TAP_TOKEN }}'
-    homepage: https://askiso.io
-    description: ISO 20022 reference tooling for the terminal, an editor, and an AI assistant
-    binaries:
-      - askiso
-      - askiso-mcp
-      - askiso-lsp
-    caveats: |
-      AskISO ships no ISO 20022 specification content. Download the message sets
-      you need from https://www.iso20022.org/ then:
-
-        askiso catalog add <downloaded.zip>
-
-      Search, lint, generate and MT translation work without any download.
-
-scoops:
-  - name: askiso
-    # Same reasoning as the cask above.
-    skip_upload: '{{ if eq .Env.SCOOP_BUCKET_TOKEN "" }}true{{ else }}false{{ end }}'
-    repository:
-      owner: sebastienrousseau
-      name: scoop-bucket
-      token: '{{ .Env.SCOOP_BUCKET_TOKEN }}'
-    homepage: https://askiso.io
-    description: ISO 20022 reference tooling for the terminal, an editor, and an AI assistant
-    license: Apache-2.0 OR MIT
+# Homebrew and Scoop are published by their own repositories
+# (sebastienrousseau/homebrew-tap and sebastienrousseau/scoop-bucket), whose
+# bump workflows read each release's checksums.txt. Their main branches take
+# only signed commits through pull requests, which a push from here could not
+# satisfy.
 
 # The title is "askiso <version>", never the bare tag (AGENTS.md §3). The
 # body goreleaser writes is a placeholder: scripts/releasepage replaces it

@@ -11,7 +11,6 @@ flowchart TD
     Core --> LSP["askiso-lsp (Language Server)"]
     Core --> FFI["pkg/iso20022/ffi (askiso-abi/v1)"]
     Core --> WASM["web/wasm (askiso.io, WebAssembly)"]
-    FFI --> CABI["cmd/askiso-cabi (libaskiso)"]
     FFI --> Server
 ```
 
@@ -19,4 +18,4 @@ flowchart TD
 
 1. **Zero Redistribution:** AskISO embeds only factual metadata (message IDs, sets, RA URLs). Users supply their own downloaded ISO 20022 catalogue or private CBPR+ artefacts.
 2. **Three-Tier Validation:** Syntactic XSD streaming (`O(1)` per repeating transaction below `StreamDepth = 2`), semantic business rules (IBAN/BIC/UETR/currency), and dated scheme profiles (`cbpr-2026`, etc.).
-3. **One Engine for Every Runtime:** the browser runs `pkg/iso20022` compiled to WebAssembly, and other languages reach it through the `askiso-abi/v1` JSON contract, either in-process via the C-ABI library (`-buildmode=c-shared`) or over HTTP via `askiso-server`. No language packages are published yet.
+3. **One Engine for Every Runtime:** the browser runs `pkg/iso20022` compiled to WebAssembly, and other languages reach it over HTTP through `askiso-server` and the `askiso-abi/v1` JSON contract. No language packages are published yet.

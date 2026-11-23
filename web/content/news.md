@@ -38,6 +38,16 @@ To follow along without visiting: subscribe to the [feed](/rss.xml) in any
 reader, watch releases on GitHub, or ask on the [contact page](/contact/) to be
 told by email when something changes that affects the messages you send.
 
+## v0.0.7 - 23 November 2026
+
+The install update. The macOS binaries are now signed and notarised by
+Apple, so they open without a security prompt. You can install AskISO with
+Homebrew on macOS and Linux, or with Scoop on Windows. Every download now has
+its own build attestation, so you can check where it came from on its own.
+The C shared library is gone. Code in other languages calls the HTTP server
+instead.
+[Read the v0.0.7 release notes and download it](https://github.com/sebastienrousseau/askiso/releases/tag/v0.0.7).
+
 ## v0.0.6 - 22 November 2026
 
 The any-language update. `askiso-server` serves linting, validation,
