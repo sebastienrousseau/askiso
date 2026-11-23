@@ -66,6 +66,12 @@ jobs:
           go doc -all ./pkg/iso20022 > /dev/null
           go test -run TestPublicAPIIsDocumented ./pkg/iso20022
 
+      # Cyclomatic <= 10 and cognitive <= 15 per function. Functions already
+      # over are recorded in scripts/complexity-baseline.txt and may only
+      # improve; a new offender or a worse score fails the job.
+      - name: Complexity against the baseline
+        run: bash scripts/complexity-check.sh
+
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: latest

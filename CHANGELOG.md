@@ -11,6 +11,25 @@ its pull requests and the SHA-256 of every download.
 
 ## [Unreleased]
 
+### Added
+
+- The Website workflow runs every build gate (WCAG audit, links, sitemap,
+  readability) on pull requests, without deploying, so a change that breaks
+  the site fails on its branch instead of on main.
+- A complexity gate in CI and `make ci`: cyclomatic complexity at most 10
+  and cognitive complexity at most 15 per function. The 432 functions over
+  a ceiling today are recorded in `scripts/complexity-baseline.txt`, and
+  may only improve.
+
+### Fixed
+
+- Build provenance covered only `checksums.txt`, so the README's
+  `gh attestation verify <archive>` returned 404. The release workflow now
+  attests every artifact listed in `checksums.txt`, and the README shows how
+  to verify 0.0.6 and earlier through the checksum file.
+- The README said the Homebrew cask and Scoop manifest are attached to each
+  release; they are built but not attached.
+
 ## [0.0.6] - 2026-11-22
 
 ### Added
