@@ -40,7 +40,7 @@ row and demo block.
 
 **The AskISO ecosystem**
 
-- [The AskISO ecosystem](#the-askiso-ecosystem) - CLI and TUI, MCP server, language server, HTTP server, Go SDK, C library, website, GitHub Action
+- [The AskISO ecosystem](#the-askiso-ecosystem) - CLI and TUI, MCP server, language server, HTTP server, Go SDK, website, GitHub Action
 
 **Library reference**
 
@@ -85,8 +85,7 @@ cd askiso && make build
 
 No external dependencies. Validation is pure Go, so there is no libxml2 or cgo to
 install and results are identical on every platform. `xmllint`, if you have it, can be
-used as a cross-check with `--engine libxml2`. The one exception is the optional C
-shared library, which cgo builds (see [From other languages](#from-other-languages)).
+used as a cross-check with `--engine libxml2`.
 
 ### Release archives and packages
 
@@ -95,9 +94,8 @@ archives for Linux, macOS and Windows on amd64 and arm64, `.deb`, `.rpm`, `.apk`
 and Arch `.pkg.tar.zst` packages for Linux, an SBOM per archive, and a Sigstore
 signature over the checksums. Each archive and package carries all four binaries:
 `askiso` (CLI and TUI), `askiso-mcp` (Model Context Protocol server), `askiso-lsp`
-(language server) and `askiso-server` (HTTP server). The C shared library is not
-attached; build it from source. AskISO redistributes no ISO 20022 specification
-content.
+(language server) and `askiso-server` (HTTP server). AskISO redistributes no
+ISO 20022 specification content.
 
 Homebrew and Scoop carry nothing yet: publishing to a tap writes to a second
 repository, and the token for it is not configured. Every release builds the cask
@@ -218,7 +216,6 @@ of truth rather than a mirror of unknown age.
 | `askiso-lsp` | Language server for ISO 20022 XML | Diagnostics, hover, completion and outline in an editor |
 | `askiso-server` | HTTP server you run yourself | Lint, validate, translate and look up messages from any language over HTTP |
 | `pkg/iso20022` | Go SDK, the shared core | Embed the same checks in a Go service |
-| `cmd/askiso-cabi` | C shared library over a JSON contract | Call the engine in-process from C or any language with a C FFI |
 | [askiso.io](https://askiso.io) | The engine compiled to WebAssembly | Check a message in the browser, nothing sent anywhere |
 | `action.yml` | Composite GitHub Action | Annotate pull requests that introduce non-compliant messages |
 
@@ -305,7 +302,8 @@ user what to download.
 
 ### As an HTTP service
 
-`askiso-server` serves the engine over HTTP for services that are not written in Go.
+`askiso-server` serves the engine over HTTP, which is how a service that is not written
+in Go calls it.
 You run it yourself; nothing is sent to an AskISO-operated service.
 
 ```bash
@@ -321,19 +319,6 @@ curl -s -X POST http://127.0.0.1:8080/v1/lint -d '{"xml":"<Document>...</Documen
 `/v1/healthz` are shortcuts. Request bodies are capped at 8 MiB. The server reads only
 the catalogue named by `-catalog` (or found by the usual search), never a path in a
 request, and its responses give file paths relative to that catalogue.
-
-### From other languages
-
-`cmd/askiso-cabi` builds the same operations as a C shared library:
-
-```bash
-go build -buildmode=c-shared -o libaskiso.so ./cmd/askiso-cabi
-```
-
-It exports `askiso_abi_version`, `askiso_call(op, json_payload)` and `askiso_free`;
-every call returns an `askiso-abi/v1` JSON envelope, described in
-[`docs/ABI.md`](docs/ABI.md). No language packages are published yet: bind the library
-with your language's C FFI.
 
 ### The website
 
@@ -395,7 +380,7 @@ embedded index.
 | Generation | Templates with rail presets for four messages; schema-driven generation for the rest | Built; schema-driven needs a catalogue |
 | Change analysis | Path-level schema diff with breaking-change classification | Built; needs a catalogue |
 | Private CBPR+ | Local rule packs and versioned workspaces from an institution's own MyStandards exports | Built; nothing leaves the machine |
-| Integrations | MCP server, language server, HTTP server, Go SDK, C shared library, WebAssembly website, GitHub Action with SARIF | Built |
+| Integrations | MCP server, language server, HTTP server, Go SDK, WebAssembly website, GitHub Action with SARIF | Built |
 | Simulation | Lifecycle flows, sequence diagrams and a local mock clearing rail | Built |
 
 ---
@@ -1109,8 +1094,7 @@ the safe-harbour terms.
 - **API reference:** [pkg.go.dev](https://pkg.go.dev/github.com/sebastienrousseau/askiso/pkg/iso20022)
 - **Developer docs:** [CONTRIBUTING.md](CONTRIBUTING.md), [Development](#development)
   and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- **Reference:** [docs/ABI.md](docs/ABI.md) (the JSON contract behind the HTTP server
-  and the C library), [docs/SECURITY.md](docs/SECURITY.md),
+- **Reference:** [docs/ABI.md](docs/ABI.md) (the JSON contract behind the HTTP server), [docs/SECURITY.md](docs/SECURITY.md),
   [docs/COMPLIANCE.md](docs/COMPLIANCE.md), [docs/BENCHMARKS.md](docs/BENCHMARKS.md)
   and [docs/COMPARISON.md](docs/COMPARISON.md)
 - **Examples:** [examples/README.md](examples/README.md)

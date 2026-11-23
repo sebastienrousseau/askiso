@@ -41,17 +41,14 @@ func clientCatalogue(t *testing.T) string {
 	return root
 }
 
-// Dispatch serves in-process callers and honours catalog_path. DispatchPinned
-// serves network hosts: it reads only the operator's catalogue.
+// DispatchPinned reads only the operator's catalogue, never one the payload
+// names.
 func TestCatalogPathContract(t *testing.T) {
 	isolate(t)
 	dir := clientCatalogue(t)
 	named, _ := json.Marshal(map[string]string{"id": "pacs.999.001.01", "catalog_path": dir})
 	bare, _ := json.Marshal(map[string]string{"id": "pacs.999.001.01"})
 
-	if env := decodeEnv(t, Dispatch("lookup", named)); !env.OK {
-		t.Fatalf("Dispatch ignored catalog_path: %+v", env)
-	}
 	if env := decodeEnv(t, DispatchPinned("lookup", named, "")); env.OK {
 		t.Fatalf("DispatchPinned read the payload's catalog_path: %+v", env)
 	}
@@ -110,7 +107,7 @@ func TestDispatchOperations(t *testing.T) {
 		}), true},
 		{"validate empty xml", "validate", empty, false},
 		{"validate invalid json", "validate", bad, false},
-		{"validate empty catalogue", "validate", mustJSON(t, map[string]string{"xml": sampleXML, "catalog_path": t.TempDir()}), false},
+		{"validate without a catalogue", "validate", mustJSON(t, map[string]string{"xml": sampleXML}), false},
 		{"translate_mt empty", "translate_mt", empty, false},
 		{"translate_mt invalid json", "translate_mt", bad, false},
 		{"translate_mx empty", "translate_mx", empty, false},
@@ -120,7 +117,7 @@ func TestDispatchOperations(t *testing.T) {
 		{"classify_addresses invalid json", "classify_addresses", bad, false},
 	}
 	for _, tc := range cases {
-		env := decodeEnv(t, Dispatch(tc.op, tc.payload))
+		env := decodeEnv(t, DispatchPinned(tc.op, tc.payload, ""))
 		if env.OK != tc.wantOK || env.ABI != ABIVersion {
 			t.Errorf("%s: ok=%v abi=%q, want ok=%v: %+v", tc.name, env.OK, env.ABI, tc.wantOK, env)
 		}
@@ -166,28 +163,9 @@ func TestRelPathEdges(t *testing.T) {
 
 func TestPinnedErrorTextHidesRoot(t *testing.T) {
 	in, root := hostInfo(t)
-	msg := (&source{private: true, root: root}).errorText(fmt.Errorf("reading %s: denied (in %s)", in.SchemaPath, root))
+	msg := (&source{root: root}).errorText(fmt.Errorf("reading %s: denied (in %s)", in.SchemaPath, root))
 	// Error text keeps the platform's separators; only the root is removed.
 	if strings.Contains(msg, root) || !strings.Contains(msg, "reading "+filepath.Join("A", "Schemas", "x.xsd")) {
 		t.Errorf("error kept the root: %q", msg)
-	}
-	if msg := (&source{root: root}).errorText(fmt.Errorf("at %s", root)); !strings.Contains(msg, root) {
-		t.Errorf("in-process error lost its path: %q", msg)
-	}
-}
-
-// In-process callers own the filesystem and keep absolute paths.
-func TestDispatchKeepsAbsolutePaths(t *testing.T) {
-	isolate(t)
-	dir := clientCatalogue(t)
-	named, _ := json.Marshal(map[string]string{"id": "pacs.999.001.01", "catalog_path": dir})
-	var env struct {
-		Data iso20022.MessageInfo `json:"data"`
-	}
-	if err := json.Unmarshal(Dispatch("lookup", named), &env); err != nil {
-		t.Fatal(err)
-	}
-	if !filepath.IsAbs(env.Data.SchemaPath) {
-		t.Errorf("Dispatch schema_path = %q, want absolute", env.Data.SchemaPath)
 	}
 }

@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 // Package ffi provides a stable, JSON-envelope dispatcher over pkg/iso20022
-// shared by the C-ABI library (cmd/askiso-cabi) and the HTTP server
-// (cmd/askiso-server), so a caller in any language gets the same validation,
-// linting and translation verdicts as the Go core.
+// for the HTTP server (cmd/askiso-server), so a caller in any language gets
+// the same validation, linting and translation verdicts as the Go core.
 package ffi
 
 import (
@@ -29,34 +28,25 @@ type Envelope struct {
 	Error string `json:"error,omitempty"`
 }
 
-// Dispatch executes a named operation with a JSON payload and returns a JSON
-// Envelope. It never panics and always returns valid JSON.
+// DispatchPinned executes a named operation with a JSON payload and returns a
+// JSON Envelope. It never panics and always returns valid JSON.
 //
-// Dispatch honours a "catalog_path" field in the payload, so it is for
-// in-process callers that already own the filesystem, such as the C-ABI library.
-// A host that takes payloads from the network uses DispatchPinned instead.
-func Dispatch(op string, payload []byte) []byte {
-	return run(op, payload, &source{path: requestedCatalog(payload)})
-}
-
-// DispatchPinned executes op like Dispatch, but always reads the catalogue at
-// catalogPath (empty means the default search) and never one named in the
-// payload. Hosts that serve untrusted callers, such as askiso-server, use it so
-// a request cannot make them read an arbitrary directory.
+// It reads the catalogue at catalogPath (empty means the default search) and
+// never one named in the payload, so a request cannot make the host read an
+// arbitrary directory.
 //
 // Its responses also keep the host's filesystem private: schema, sample and
 // report paths are relative to the catalogue root, the root never appears in
 // an error, and a missing catalogue is reported without the directories that
 // were searched.
 func DispatchPinned(op string, payload []byte, catalogPath string) []byte {
-	return run(op, payload, &source{path: catalogPath, private: true})
+	return run(op, payload, &source{path: catalogPath})
 }
 
-// source is the catalogue an operation reads, as chosen by the entry point.
+// source is the catalogue an operation reads, as chosen by the host.
 type source struct {
-	path    string
-	private bool   // hide host paths in the response
-	root    string // set once the catalogue is open
+	path string
+	root string // set once the catalogue is open
 }
 
 func (src *source) open() (*iso20022.Catalogue, error) {
@@ -72,17 +62,11 @@ func run(op string, payload []byte, src *source) []byte {
 	if err != nil {
 		return marshalEnvelope(Envelope{OK: false, ABI: ABIVersion, Error: src.errorText(err)})
 	}
-	if src.private {
-		data = relativize(data, src.root)
-	}
-	return marshalEnvelope(Envelope{OK: true, ABI: ABIVersion, Data: data})
+	return marshalEnvelope(Envelope{OK: true, ABI: ABIVersion, Data: relativize(data, src.root)})
 }
 
-// errorText is err's message, without host paths when src is private.
+// errorText is err's message without host paths.
 func (src *source) errorText(err error) string {
-	if !src.private {
-		return err.Error()
-	}
 	var notFound *catalog.NotFoundError
 	if errors.As(err, &notFound) {
 		return "no ISO 20022 catalogue is installed on this server"
@@ -137,16 +121,6 @@ func relPath(p, root string) string {
 	return filepath.Base(p)
 }
 
-// requestedCatalog reads the optional catalog_path field. A payload that is not
-// valid JSON yields "", and the operation reports the decode error itself.
-func requestedCatalog(payload []byte) string {
-	var req struct {
-		CatalogPath string `json:"catalog_path"`
-	}
-	_ = decodePayload(payload, &req)
-	return req.CatalogPath
-}
-
 func marshalEnvelope(env Envelope) []byte {
 	out, err := json.Marshal(env)
 	if err != nil {
@@ -165,8 +139,8 @@ func decodePayload(payload []byte, dst any) error {
 	return nil
 }
 
-// handler runs one operation. src is chosen by the entry point, never decoded
-// from payload here, so DispatchPinned's guarantee holds for every op.
+// handler runs one operation. src is chosen by the host, never decoded from
+// payload here, so DispatchPinned's guarantee holds for every op.
 type handler func(payload []byte, src *source) (any, error)
 
 var handlers = map[string]handler{

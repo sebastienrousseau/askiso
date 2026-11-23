@@ -21,6 +21,13 @@ its pull requests and the SHA-256 of every download.
   a ceiling today are recorded in `scripts/complexity-baseline.txt`, and
   may only improve.
 
+### Removed
+
+- The C shared library (`cmd/askiso-cabi`) and `ffi.Dispatch`, the entry
+  point that honoured a caller's `catalog_path`. Other languages call
+  `askiso-server`, whose `ffi.DispatchPinned` reads only the operator's
+  catalogue and keeps host paths out of responses.
+
 ### Fixed
 
 - Build provenance covered only `checksums.txt`, so the README's
