@@ -97,7 +97,7 @@ signature over the checksums. Each archive and package carries all four binaries
 (language server) and `askiso-server` (HTTP server). AskISO redistributes no
 ISO 20022 specification content.
 
-From 0.0.7 the macOS binaries are signed with a Developer ID certificate and
+From 0.0.8 the macOS binaries are signed with a Developer ID certificate and
 notarised by Apple, so Gatekeeper runs them without a prompt. Homebrew and Scoop
 install the same archives:
 
@@ -356,7 +356,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
-      - uses: sebastienrousseau/askiso@v0.0.7
+      - uses: sebastienrousseau/askiso@v0.0.8
         with:
           path: ./messages
           profile: cbpr-2026

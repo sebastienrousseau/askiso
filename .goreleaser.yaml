@@ -80,6 +80,12 @@ builds:
 # environment. GoReleaser uses quill for this, so the release stays on a Linux
 # runner. Without MACOS_SIGN_P12 (a local snapshot) the step is skipped; the
 # Release workflow refuses to run a tag without it.
+#
+# MACOS_SIGN_P12 holds the Developer ID Application certificate and its key
+# and nothing else. Given the intermediate as well, quill numbers the chain
+# from it and writes "certificate root[...]" into the designated requirement,
+# which the signature then fails (0.0.7). Given the leaf alone, it completes
+# the chain from Apple's certificates and writes "certificate 1[...]".
 notarize:
   macos:
     - enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'

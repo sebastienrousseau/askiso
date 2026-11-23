@@ -29,7 +29,7 @@ go install github.com/sebastienrousseau/askiso/cmd/askiso@latest
 
 Tagged releases are on the [releases page](https://github.com/sebastienrousseau/askiso/releases).
 Each one carries signed archives for Linux, macOS and Windows, a software bill
-of materials, and a Sigstore signature over the checksums. From 0.0.7 the
+of materials, and a Sigstore signature over the checksums. From 0.0.8 the
 macOS binaries are signed and notarised. Install with
 `brew install --cask sebastienrousseau/tap/askiso` on macOS and Linux, or with
 Scoop on Windows from the `sebastienrousseau/scoop-bucket` bucket.

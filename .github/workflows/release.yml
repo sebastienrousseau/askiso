@@ -148,8 +148,8 @@ jobs:
         run: go run ./scripts/releasepage -name askiso -tag "${GITHUB_REF_NAME}" -publish
 
   # Proves on a Mac what a user's Mac will check: every published macOS binary
-  # carries a Developer ID signature with the hardened runtime, Gatekeeper
-  # accepts it as notarised, and it runs.
+  # carries a Developer ID signature with the hardened runtime that satisfies
+  # its own designated requirement, Apple has notarised it, and it runs.
   verify-macos:
     name: Verify macOS signatures
     needs: release
@@ -171,10 +171,17 @@ jobs:
             mkdir "$arch"
             tar -xzf "askiso_${version}_darwin_${arch}.tar.gz" -C "$arch"
             for b in askiso askiso-mcp askiso-lsp askiso-server; do
+              codesign -d -r- "$arch/$b" 2>&1 | grep '^designated'
+              # Also checks the designated requirement, but only with
+              # --verbose: without it codesign exits 0 on a binary that fails
+              # it. 0.0.7 passed every other line here and failed this one.
               codesign --verify --strict --verbose=2 "$arch/$b"
               codesign -dvv "$arch/$b" 2>&1 | grep -q '^Authority=Developer ID Application:'
               codesign -dvv "$arch/$b" 2>&1 | grep -q 'flags=.*runtime'
-              spctl --assess --type execute -vv "$arch/$b" 2>&1 | tee /dev/stderr | grep -q 'source=Notarized Developer ID'
+              # Asks Apple whether the binary is notarised. spctl cannot: for
+              # a bare command-line binary it answers "does not seem to be an
+              # app" whatever the signature.
+              codesign --verify --check-notarization -R=notarized "$arch/$b"
               echo "ok $arch/$b"
             done
           done
