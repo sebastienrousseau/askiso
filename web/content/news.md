@@ -40,10 +40,11 @@ told by email when something changes that affects the messages you send.
 
 ## v0.0.8 - 23 November 2026
 
-A signing fix. The macOS binaries in v0.0.7 were notarised by Apple, but
-their signature pointed at the wrong certificate, so a strict check
-rejected them. v0.0.8 signs them correctly, and the release now checks this
-on a Mac before it is done.
+A signing correction. Apple notarised the macOS binaries in v0.0.7, but each
+signature identified the wrong certificate as its root, so a strict
+verification rejected them. v0.0.8 signs them with the Developer ID
+certificate alone, and the release now confirms on a Mac, before it
+finishes, that every binary satisfies its own signature requirement.
 [Read the v0.0.8 release notes and download it](https://github.com/sebastienrousseau/askiso/releases/tag/v0.0.8).
 
 ## v0.0.7 - 23 November 2026
