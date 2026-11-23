@@ -38,6 +38,14 @@ To follow along without visiting: subscribe to the [feed](/rss.xml) in any
 reader, watch releases on GitHub, or ask on the [contact page](/contact/) to be
 told by email when something changes that affects the messages you send.
 
+## v0.0.8 - 23 November 2026
+
+A signing fix. The macOS binaries in v0.0.7 were notarised by Apple, but
+their signature pointed at the wrong certificate, so a strict check
+rejected them. v0.0.8 signs them correctly, and the release now checks this
+on a Mac before it is done.
+[Read the v0.0.8 release notes and download it](https://github.com/sebastienrousseau/askiso/releases/tag/v0.0.8).
+
 ## v0.0.7 - 23 November 2026
 
 The install update. The macOS binaries are now signed and notarised by

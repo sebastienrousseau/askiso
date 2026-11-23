@@ -11,6 +11,19 @@ its pull requests and the SHA-256 of every download.
 
 ## [Unreleased]
 
+## [0.0.8] - 2026-11-23
+
+### Fixed
+
+- The 0.0.7 macOS binaries are signed and notarised, but their designated
+  requirement names Apple's intermediate certificate as the root, so they
+  fail `codesign --verify --strict --verbose`. The signing certificate is
+  now the Developer ID certificate alone, from which quill writes the
+  requirement `draft` and Xcode use.
+- The release's macOS check asked `spctl` about notarisation, which rejects
+  every bare command-line binary. It now asks Apple through
+  `codesign --check-notarization`, and prints each designated requirement.
+
 ## [0.0.7] - 2026-11-23
 
 ### Added
@@ -196,7 +209,8 @@ its pull requests and the SHA-256 of every download.
 - Release binaries for Linux, macOS and Windows with an SBOM per archive and
   a Sigstore-signed checksum file.
 
-[Unreleased]: https://github.com/sebastienrousseau/askiso/compare/v0.0.7...HEAD
+[Unreleased]: https://github.com/sebastienrousseau/askiso/compare/v0.0.8...HEAD
+[0.0.8]: https://github.com/sebastienrousseau/askiso/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/sebastienrousseau/askiso/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/sebastienrousseau/askiso/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/sebastienrousseau/askiso/compare/v0.0.4...v0.0.5
