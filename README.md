@@ -97,10 +97,9 @@ signature over the checksums. Each archive and package carries all four binaries
 (language server) and `askiso-server` (HTTP server). AskISO redistributes no
 ISO 20022 specification content.
 
-Homebrew and Scoop carry nothing yet: publishing to a tap writes to a second
-repository, and the token for it is not configured. Every release builds the cask
-and the manifest but neither publishes nor attaches them, so adding that token
-starts publishing them without any other change. Once it is, these are the commands:
+From 0.0.7 the macOS binaries are signed with a Developer ID certificate and
+notarised by Apple, so Gatekeeper runs them without a prompt. Homebrew and Scoop
+install the same archives:
 
 ```bash
 # macOS and Linux
@@ -357,7 +356,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
-      - uses: sebastienrousseau/askiso@v0.0.6
+      - uses: sebastienrousseau/askiso@v0.0.7
         with:
           path: ./messages
           profile: cbpr-2026

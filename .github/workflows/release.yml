@@ -69,6 +69,9 @@ jobs:
     name: Release
     needs: verify
     runs-on: ubuntu-latest
+    # The Apple signing certificate and notary key are secrets of this
+    # environment, not of the repository, so only this job can read them.
+    environment: release
     permissions:
       contents: write
       # Sigstore signs keylessly against the workflow's own OIDC identity, so
@@ -91,14 +94,38 @@ jobs:
 
       - uses: anchore/sbom-action/download-syft@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
 
+      # goreleaser skips notarisation when the certificate is absent, which
+      # is right for a local snapshot and wrong for a release: macOS would
+      # quarantine and refuse the binaries. A tag without the secrets stops
+      # here, before anything is built or published.
+      - name: Signing secrets are present
+        env:
+          MACOS_SIGN_P12: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+          MACOS_NOTARY_KEY: ${{ secrets.APPLE_API_KEY }}
+          MACOS_NOTARY_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          MACOS_NOTARY_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          missing=0
+          for v in MACOS_SIGN_P12 MACOS_SIGN_PASSWORD MACOS_NOTARY_KEY MACOS_NOTARY_KEY_ID MACOS_NOTARY_ISSUER_ID; do
+            if [ -z "${!v}" ]; then echo "::error::$v is not set in the release environment"; missing=1; fi
+          done
+          exit "$missing"
+
       - uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
         with:
-          version: '~> v2'
+          # An exact release, not a range: this job holds the Apple signing
+          # certificate, so a new goreleaser runs here only after a reviewed
+          # bump.
+          version: 'v2.20.2'
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          SCOOP_BUCKET_TOKEN: ${{ secrets.SCOOP_BUCKET_TOKEN }}
+          MACOS_SIGN_P12: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+          MACOS_NOTARY_KEY: ${{ secrets.APPLE_API_KEY }}
+          MACOS_NOTARY_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          MACOS_NOTARY_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
 
       # Build provenance, so a consumer can prove an artifact came from this
       # repository at this commit rather than from someone's laptop.
@@ -119,3 +146,38 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: go run ./scripts/releasepage -name askiso -tag "${GITHUB_REF_NAME}" -publish
+
+  # Proves on a Mac what a user's Mac will check: every published macOS binary
+  # carries a Developer ID signature with the hardened runtime, Gatekeeper
+  # accepts it as notarised, and it runs.
+  verify-macos:
+    name: Verify macOS signatures
+    needs: release
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Signed, notarised and runnable
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="$GITHUB_REF_NAME"
+          version="${tag#v}"
+          cd "$RUNNER_TEMP"
+          for arch in amd64 arm64; do
+            gh release download "$tag" --repo "$GITHUB_REPOSITORY" \
+              --pattern "askiso_${version}_darwin_${arch}.tar.gz"
+            mkdir "$arch"
+            tar -xzf "askiso_${version}_darwin_${arch}.tar.gz" -C "$arch"
+            for b in askiso askiso-mcp askiso-lsp askiso-server; do
+              codesign --verify --strict --verbose=2 "$arch/$b"
+              codesign -dvv "$arch/$b" 2>&1 | grep -q '^Authority=Developer ID Application:'
+              codesign -dvv "$arch/$b" 2>&1 | grep -q 'flags=.*runtime'
+              spctl --assess --type execute -vv "$arch/$b" 2>&1 | tee /dev/stderr | grep -q 'source=Notarized Developer ID'
+              echo "ok $arch/$b"
+            done
+          done
+          for b in askiso-mcp askiso-lsp askiso-server; do
+            "arm64/$b" -version | grep -qx "$b $version"
+          done
