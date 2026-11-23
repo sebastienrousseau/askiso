@@ -11,7 +11,17 @@ its pull requests and the SHA-256 of every download.
 
 ## [Unreleased]
 
+## [0.0.7] - 2026-11-23
+
 ### Added
+
+- macOS binaries are signed with a Developer ID certificate and notarised
+  by Apple, so Gatekeeper runs them without a prompt. The Release workflow
+  refuses a tag when the signing secrets are missing, and a macOS job checks
+  every published binary's signature and notarisation.
+- Homebrew (`brew install --cask sebastienrousseau/tap/askiso`) and Scoop
+  (`scoop install askiso` from `sebastienrousseau/scoop-bucket`). Each
+  repository bumps itself from the release's `checksums.txt`.
 
 - The Website workflow runs every build gate (WCAG audit, links, sitemap,
   readability) on pull requests, without deploying, so a change that breaks
@@ -20,6 +30,11 @@ its pull requests and the SHA-256 of every download.
   and cognitive complexity at most 15 per function. The 432 functions over
   a ceiling today are recorded in `scripts/complexity-baseline.txt`, and
   may only improve.
+
+### Changed
+
+- golang.org/x/term 0.48.0, golang.org/x/text 0.44.0 and puppeteer-core
+  25.17.0 (#18, #19, #20).
 
 ### Removed
 
@@ -35,7 +50,8 @@ its pull requests and the SHA-256 of every download.
   attests every artifact listed in `checksums.txt`, and the README shows how
   to verify 0.0.6 and earlier through the checksum file.
 - The README said the Homebrew cask and Scoop manifest are attached to each
-  release; they are built but not attached.
+  release; they were built but never published. goreleaser no longer builds
+  them; the tap and bucket publish them instead.
 
 ## [0.0.6] - 2026-11-22
 
@@ -180,7 +196,8 @@ its pull requests and the SHA-256 of every download.
 - Release binaries for Linux, macOS and Windows with an SBOM per archive and
   a Sigstore-signed checksum file.
 
-[Unreleased]: https://github.com/sebastienrousseau/askiso/compare/v0.0.6...HEAD
+[Unreleased]: https://github.com/sebastienrousseau/askiso/compare/v0.0.7...HEAD
+[0.0.7]: https://github.com/sebastienrousseau/askiso/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/sebastienrousseau/askiso/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/sebastienrousseau/askiso/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/sebastienrousseau/askiso/compare/v0.0.3...v0.0.4
