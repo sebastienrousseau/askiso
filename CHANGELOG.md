@@ -11,6 +11,16 @@ its pull requests and the SHA-256 of every download.
 
 ## [Unreleased]
 
+### Added
+
+- The Website workflow runs every build gate (WCAG audit, links, sitemap,
+  readability) on pull requests, without deploying, so a change that breaks
+  the site fails on its branch instead of on main.
+- A complexity gate in CI and `make ci`: cyclomatic complexity at most 10
+  and cognitive complexity at most 15 per function. The 432 functions over
+  a ceiling today are recorded in `scripts/complexity-baseline.txt`, and
+  may only improve.
+
 ### Fixed
 
 - Build provenance covered only `checksums.txt`, so the README's

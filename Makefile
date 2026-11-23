@@ -25,7 +25,7 @@ COVERAGE_FLOOR = 97.5
 GOVULNCHECK_VERSION ?= v1.7.0
 GOSEC_VERSION ?= v2.22.8
 
-.PHONY: all build install test race property checkptr asan msan reliability cover conformance cbpr-local-conformance cbpr-strict-conformance differential fuzz ci fmt vet lint no-binaries readability a11y seo vuln clean run catalog-info web web-test web-interact a11y-axe banner-contrast reflow terminal-swap sitemap-check focus-order web-console web-serve wasm sessions sessions-record links mcp lsp mcp-check lsp-check servers readme-check demo
+.PHONY: all build install test race property checkptr asan msan reliability cover conformance cbpr-local-conformance cbpr-strict-conformance differential fuzz ci fmt vet lint no-binaries readability a11y seo vuln clean run catalog-info web web-test web-interact a11y-axe banner-contrast reflow terminal-swap sitemap-check focus-order web-console web-serve wasm sessions sessions-record links mcp lsp mcp-check lsp-check servers readme-check complexity demo
 
 all: build
 
@@ -550,7 +550,12 @@ vuln:
 	govulncheck ./...
 
 # The full gate CI runs, minus the catalogue-dependent conformance suite.
-ci: fmt vet lint no-binaries readme-check test cover vuln build sessions web-test mcp-check lsp-check
+ci: fmt vet lint complexity no-binaries readme-check test cover vuln build sessions web-test mcp-check lsp-check
+
+# Cyclomatic <= 10 and cognitive <= 15 per function. Existing offenders are
+# in scripts/complexity-baseline.txt and may only improve.
+complexity:
+	bash scripts/complexity-check.sh
 
 # The README follows ~/Code/README-TEMPLATE.md: headings, badge row and demo
 # block. The script says exactly what drifted.
